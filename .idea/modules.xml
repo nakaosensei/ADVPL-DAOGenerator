@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/ScriptDAOGenerator.iml" filepath="$PROJECT_DIR$/ScriptDAOGenerator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/advpl/advpl.iml" filepath="$PROJECT_DIR$/advpl/advpl.iml" />
+      <module fileurl="file://$PROJECT_DIR$/advpl-srcPessoal/advpl-srcPessoal.iml" filepath="$PROJECT_DIR$/advpl-srcPessoal/advpl-srcPessoal.iml" />
+    </modules>
+  </component>
+</project>

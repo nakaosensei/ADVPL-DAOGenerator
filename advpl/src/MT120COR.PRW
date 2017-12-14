@@ -1,0 +1,19 @@
+#include 'protheus.ch'
+#include 'parmtype.ch'
+
+/*
+ Manipula regras de cores de status na mBrowse
+ na tela pedidos de compras
+*/
+user function MT120COR()
+	Local aNewCores := aClone(PARAMIXB[1])  //aCores
+	aNewCores := {	{'C7_QUJE==0 .And. C7_QTDACLA==0.And.Empty(C7_RESIDUO).AND. Empty(C7_CONTRA) .AND. C7_CONAPRO<>"B"'			, 'BR_VERDE'},; //pedidos Pendentes
+					{'C7_QUJE<>0 .And. C7_QUJE<C7_QUANT .AND. Empty(C7_RESIDUO) .AND. Empty(C7_CONTRA) .AND. C7_CONAPRO<>"B"'					, 'BR_AMARELO'},; //Recibido parcialmente
+					{'C7_QTDACLA >0 .And. Empty(C7_RESIDUO) .AND. Empty(C7_CONTRA) .AND. C7_CONAPRO<>"B" ', 'BR_LARANJA'},;//Pré-nota
+					{'C7_QUJE>=C7_QUANT .AND. Empty(C7_RESIDUO) .AND. Empty(C7_CONTRA) .AND. C7_CONAPRO<>"B"'						, 'BR_VERDE_ESCURO'},; //pedidos atendidos
+					{'C7_ACCPROC<>"1" .And.  C7_CONAPRO=="B" .And. C7_QUJE < C7_QUANT .AND. Empty(C7_RESIDUO) .AND. C7_UBLO<>"S"' 				, 'BR_AZUL' },; // Em aprovação
+				    {'C7_ACCPROC<>"1" .And.  C7_CONAPRO=="B" .And. C7_QUJE < C7_QUANT .AND. Empty(C7_RESIDUO) .AND. C7_UBLO=="S"' 				, 'BR_VERMELHO' },; // pedidos bloqueados, Devolvidos e Reprovados
+					{'!Empty(C7_RESIDUO)'			, 'BR_PRETO'}}//pedidos com Eliminação de Resíduo
+						
+					
+Return aNewCores

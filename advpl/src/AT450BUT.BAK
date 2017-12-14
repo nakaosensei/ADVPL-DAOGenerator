@@ -1,0 +1,62 @@
+#INCLUDE "rwmake.ch"
+
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma  ³AT460BUT  º Autor ³DANIEL GOUVEA          Data ³  04/06/14  º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDescricao ³ BOTAO NA TECA450                                           º±±
+±±º          ³                                                            º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³ LIGUE TELECOM                                              º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+
+User Function AT450BUT()
+
+Public UBotao := .t.
+
+aBotao := {} 
+AAdd(aBotao,{"CLIENTE",{|| U_COMP460() }, "Atendim.OS","Atendim.OS" } ) 
+//Aadd(aBotao,{"POSCLI" ,{|| Execblock("At300BCli")}, "Historico do Cliente...", "Hist Cliente"})  //"Historico do Cliente..."
+Aadd(aBotao,{"NOTE"   ,{|| TECA040()  }, "Base Instalada...", "Base Inst"})  //"Cliente x Equipamento..."
+
+Return( aBotao ) 
+
+User Function At300BCli()
+
+Local aArea     := GetArea()
+Local aAreaSA1  := GetArea("SA1")
+Local lConsulta := .T. 
+
+dbSelectArea("SA1")
+dbSetOrder(1)
+If ( MsSeek(xFilial("SA1")+M->AB6_CODCLI+M->AB6_LOJA) )
+	If GetNewPar( "MV_ATHISPA", 2 ) == 1 
+		lConsulta := Pergunte("ATC010",.T.)
+	EndIf 	
+	If lConsulta 
+		AtC010con(Alias(),RecNo(),2)
+	EndIf 	
+Else
+	Help(" ",1,"AT300BCLI")
+EndIf
+
+RestArea( aAreaSA1 ) 
+RestArea( aArea ) 
+
+Return() 
+
+USER FUNCTION COMP460()
+
+Private comp460OS  := M->AB6_NUMOS
+Private comp460Ni  := ascan(aHeader,{|x| rtrim(x[2])=="AB7_ITEM"})
+Private comp460It  := if(comp460Ni > 0,aCols[n,comp460Ni],"")
+Private comp460Num := comp460OS+comp460It
+
+TECA460()
+
+RETURN(.T.)

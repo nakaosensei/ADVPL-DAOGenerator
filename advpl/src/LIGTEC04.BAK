@@ -1,0 +1,253 @@
+#Include 'Protheus.ch'
+#INCLUDE 'FWMVCDEF.CH'
+
+/*
+LIGTEC04 - ALOCAÇÃO DE TÉCNICOS POR FILA DE HELP DESK
+AUTOR    - DANIEL GOUVEA
+DATA     - 15/07/14
+*/
+
+User Function LIGTEC04()
+Local oBrowse
+Local aCores := {} 
+Private aRotina := MenuDef()
+
+PRIVATE cCadastro := "Alocação de Help Desk"
+
+aCores := { { "ABL_SITUAC=='1'", "BR_VERMELHO" },;
+				 { "ABL_SITUAC=='2'", "BR_AMARELO"  },; 
+				 { "ABL_SITUAC=='3'", "BR_VERDE"    },;
+				 { "ABL_SITUAC=='4'", "BR_AZUL" } }                                           
+
+	dbSelectArea( "ABL" ) 
+	ABL->( dbSetOrder( 3 ) )                            
+
+	dbSeek(xFilial("ABL"))                                              
+	mBrowse( 6, 1,22,75,"ABL", , , , , , aCores )
+
+
+Return .T.
+
+Static Function MenuDef()
+
+Local aRotina := {}
+	aRotina := {	{ "Pesquisar"	,"AxPesqui"	,0	,1	,0	,.F.	}	,;   //"Pesquisar"
+					{ "Visualizar"	,"AxVisual"	,0	,2	,0	,.T.	}	,;  //"Visualizar"
+					{ "Alocar"	,'U_LIGTEC4A'	,0	,3	,0	,.T.	}	,;  //"Alterar" 
+					{ "Legenda"	,'U_LIGTEC4L'	,0	,2	,0	,.T.	}	} //"Legenda"
+	
+Return (aRotina)
+
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Program   ³ At320Leg ³ Autor ³Vendas e CRM           ³ Data ³06/03/2012³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descricao ³ Exibe a legenda da fila de Help Desk                       ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Retorno   ³ Nil                                                        ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ Nenhum                                                     ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³   DATA   ³ Programador   ³Manutencao efetuada                         ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³          ³               ³                                            ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+
+User Function LIGTEC4L() 
+
+BrwLegenda( cCadastro, OemToAnsi( "Status" ), { { "BR_VERMELHO"  , OemToAnsi( "Nao iniciado" ) },; // "Status","Nao iniciado"
+								{ "BR_AMARELO", OemToAnsi( "Em atendimento" ) },;       // "Em atendimento"
+								{ "BR_VERDE"  , OemToAnsi( "Encerrado" ) },;       // "Encerrado"
+								{ "BR_AZUL"   , OemToAnsi( "O.S. gerada" ) } } )     // "O.S. gerada"     
+
+Return( Nil ) 
+
+User function LIGTEC4A()
+Local _area := getarea()
+Local _aABK := ABK->(getarea())
+Local _aABL := ABL->(getarea())
+Private oDlg1
+Private oButton1
+Private oButton2
+Private oGet10
+Private cGet10 := SPACE(6)
+Private oGet11
+Private cGet11 := SPACE(20)
+Private oGet2
+Private cGet2
+Private oGet3
+Private cGet3 
+Private oGet4
+Private cGet4
+Private oGet5
+Private cGet5 
+Private oGet6
+Private cGet6 
+Private oGet7
+Private cGet7 
+Private oGet8
+Private cGet8 
+Private oGet9
+Private cGet9
+Private oSay1
+Private oSay2
+Private oSay3
+Private oSay4
+Private oSay5
+Private oSay6
+Private oSay7
+Private oSay8  
+
+lPermite := .t.
+lNovo := .t.
+
+dbselectarea("ABK")
+dbsetorder(1)//ABK_FILIAL+ABK_NRCHAM+ABK_SEQ
+if dbseek(xFilial()+ABL->ABL_NRCHAM)
+	if ABL->ABL_SITUAC=='3'
+		alert("Chamado já foi encerrado técnico "+POSICIONE("AA1",1,xFilial("AA1")+ABK->ABK_CODTEC,"AA1_NOMTEC"))
+		lPermite := .f.
+	else
+		if ABK->ABK_SITUAC=='2'
+			alert("Chamado já foi encerrado pro técnico "+POSICIONE("AA1",1,xFilial("AA1")+ABK->ABK_CODTEC,"AA1_NOMTEC"))
+			lPermite := .f.
+		else
+			cGet10 := ABK->ABK_CODTEC
+			cGet11 := POSICIONE("AA1",1,xFilial("AA1")+ABK->ABK_CODTEC,"AA1_NOMTEC")
+			lNovo := .f.
+		endif
+	endif
+endif
+
+if lPermite
+	dbselectarea("AB1")
+	dbsetorder(1)//AB1_FILIAL+AB1_NRCHAM
+	if dbseek(xFilial()+ABL->ABL_NRCHAM)
+		cGet2 :=AB1->AB1_NRCHAM
+		cGet3 := AB1->AB1_EMISSA
+		cGet4 := AB1->AB1_CODCLI
+		cGet5 := AB1->AB1_LOJA
+		cGet6 := Posicione("SA1",1,xFilial("SA1")+AB1->AB1_CODCLI+AB1->AB1_LOJA,"A1_NOME")
+		cGet7 := AB1->AB1_HORA
+		cGet8 := AB1->AB1_CONTAT
+		cGet9 := AB1->AB1_TEL
+		
+		DEFINE MSDIALOG oDlg1 TITLE "Alocar Técnico" FROM 000, 000  TO 400, 1100 COLORS 0, 16777215 PIXEL
+	    @ 010, 002 SAY oSay1 PROMPT "Chamado" SIZE 028, 007 OF oDlg1 COLORS 0, 16777215 PIXEL
+	    @ 010, 079 SAY oSay2 PROMPT "Emissão" SIZE 021, 007 OF oDlg1 COLORS 0, 16777215 PIXEL
+	    @ 010, 150 SAY oSay3 PROMPT "Cliente" SIZE 019, 007 OF oDlg1 COLORS 0, 16777215 PIXEL
+	    @ 010, 028 MSGET oGet2 VAR cGet2 SIZE 047, 010 OF oDlg1 WHEN .F. COLORS 0, 16777215 PIXEL
+	    @ 010, 104 MSGET oGet3 VAR cGet3 SIZE 039, 010 OF oDlg1 WHEN .F. COLORS 0, 16777215 PIXEL
+	    @ 010, 170 MSGET oGet4 VAR cGet4 SIZE 033, 010 OF oDlg1 WHEN .F. COLORS 0, 16777215 PIXEL
+	    @ 010, 210 MSGET oGet5 VAR cGet5 SIZE 011, 010 OF oDlg1 WHEN .F. COLORS 0, 16777215 PIXEL
+	    @ 010, 236 MSGET oGet6 VAR cGet6 SIZE 110, 010 OF oDlg1 WHEN .F. COLORS 0, 16777215 PIXEL
+	    @ 025, 002 SAY oSay5 PROMPT "Hora" SIZE 021, 007 OF oDlg1 COLORS 0, 16777215 PIXEL
+	    @ 025, 027 MSGET oGet7 VAR cGet7 SIZE 029, 010 OF oDlg1 WHEN .F. COLORS 0, 16777215 PIXEL
+	    @ 025, 068 SAY oSay6 PROMPT "Contato" SIZE 020, 007 OF oDlg1 COLORS 0, 16777215 PIXEL
+	    @ 025, 097 MSGET oGet8 VAR cGet8 SIZE 080, 010 OF oDlg1 WHEN .F. COLORS 0, 16777215 PIXEL
+	    @ 025, 190 SAY oSay7 PROMPT "Telefone" SIZE 023, 007 OF oDlg1 COLORS 0, 16777215 PIXEL
+	    @ 025, 220 MSGET oGet9 VAR cGet9 SIZE 073, 010 OF oDlg1 WHEN .F. COLORS 0, 16777215 PIXEL
+	    fMSNewGetDados1()
+	    @ 185, 004 SAY oSay8 PROMPT "Técnico:" SIZE 025, 007 OF oDlg1 COLORS 0, 16777215 PIXEL
+	    @ 185, 030 MSGET oGet10 VAR cGet10 SIZE 029, 010 OF oDlg1 F3 "A11" VALID vldAA1() COLORS 0, 16777215 PIXEL
+	    @ 185, 063 MSGET oGet11 VAR cGet11 SIZE 082, 010 OF oDlg1 COLORS 0, 16777215 PIXEL
+	    @ 185, 246 BUTTON oButton1 PROMPT "OK" ACTION botaoOK() SIZE 037, 012 OF oDlg1 PIXEL /*ACTION botaoOK()*/ 
+	    @ 185, 293 BUTTON oButton2 PROMPT "Cancelar" ACTION oDlg1:End() SIZE 037, 012 OF oDlg1 PIXEL //WHEN botaoCan() PIXEL
+	  ACTIVATE MSDIALOG oDlg1 CENTERED
+  endif
+endif
+
+restarea(_aABL)
+restarea(_aABK)
+restarea(_area)
+return
+
+static function vldAA1()
+Local lRet := .f.
+Local _area := getarea()
+dbselectarea("AA1")
+dbsetorder(1)
+if dbseek(xFilial()+cGet10)
+	cGet11 := AA1->AA1_NOMTEC
+	//oDlg1:oGet11:refresh()
+	lRet := .t.
+else
+	alert("Favor informar um técnico válido.")
+endif
+restarea(_area)
+return lRet
+
+static function botaoOK()
+if lNovo
+	reclock("ABL",.f.)
+	ABL->ABL_DTHELP := date()
+	ABL->ABL_HRHELP := time()
+	ABL->ABL_CODTEC := cGet10
+	ABL->ABL_SITUAC := "2" //EM ATENDIMENTO
+	msunlock()
+	reclock("ABK",.T.)
+	ABK->ABK_FILIAL := xFilial("ABK")
+	ABK->ABK_NRCHAM := ABL->ABL_NRCHAM
+	ABK->ABK_SEQ    := "01"
+	ABK->ABK_CODCLI := AB1->AB1_CODCLI
+	ABK->ABK_LOJA   := AB1->AB1_LOJA
+	ABK->ABK_CODTEC := cGet10
+	ABK->ABK_TEMPO  := "0000:01"
+	ABK->ABK_SITUAC := "1"
+	msunlock()
+else
+	dbselectarea("ABK")
+	dbsetorder(1)
+	if dbseek(xFilial()+ABL->ABL_NRCHAM)
+		reclock("ABK",.F.)
+		ABK->ABK_CODTEC := cGet10
+		msunlock()	
+	endif
+endif
+oDlg1:end()
+
+msginfo("Chamado alocado com sucesso.")
+
+return
+
+static function botaoCan()
+oDlg1:end()
+return
+
+Static Function fMSNewGetDados1()
+Local nX
+Local aHeaderEx := {}
+Local aColsEx := {}
+Local aFieldFill := {}
+Local aFields := {"AB2_ITEM","AB2_TIPO","AB2_CLASSI","AB2_CODPRO","B1_DESC","AB2_NUMSER","AB2_CODPRB","AAG_DESCRI","AB2_MEMO2"}
+Local aAlterFields := {"AB2_MEMO2"}
+Static oMSNewGetDados1
+
+  DbSelectArea("SX3")
+  SX3->(DbSetOrder(2))
+  For nX := 1 to Len(aFields)
+    If SX3->(DbSeek(aFields[nX]))
+      Aadd(aHeaderEx, {AllTrim(X3Titulo()),SX3->X3_CAMPO,SX3->X3_PICTURE,SX3->X3_TAMANHO,SX3->X3_DECIMAL,SX3->X3_VALID,;
+                       SX3->X3_USADO,SX3->X3_TIPO,SX3->X3_F3,SX3->X3_CONTEXT,SX3->X3_CBOX,SX3->X3_RELACAO})
+    Endif
+  Next nX
+
+
+dbselectarea("AB2")
+dbsetorder(1)
+if dbseek(xFilial()+AB1->AB1_NRCHAM)
+	while !eof() .and. xFilial()+AB1->AB1_NRCHAM==AB2->AB2_FILIAL+AB2->AB2_NRCHAM
+		aadd(aColsEx,{AB2->AB2_ITEM,AB2->AB2_TIPO,AB2->AB2_CLASSI,AB2->AB2_CODPRO,POSICIONE("SB1",1,XFILIAL("SB1")+AB2->AB2_CODPRO,"B1_DESC"),AB2->AB2_NUMSER,AB2->AB2_CODPRB,Posicione( "AAG", 1, xFilial( "AAG" ) + AB2->AB2_CODPRB, "AAG_DESCRI"),MSMM(AB2->AB2_MEMO),.F.})
+		dbselectarea("AB2")
+		dbskip()
+	enddo
+endif	
+  oMSNewGetDados1 := MsNewGetDados():New( 045, 001, 175, 549, GD_INSERT+GD_DELETE+GD_UPDATE, "AllwaysTrue", "AllwaysTrue", "+Field1+Field2", aAlterFields,, 999, "AllwaysTrue", "", "AllwaysTrue", oDlg1, aHeaderEx, aColsEx)
+
+Return

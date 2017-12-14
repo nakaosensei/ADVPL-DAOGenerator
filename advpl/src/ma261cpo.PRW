@@ -1,0 +1,10 @@
+user function ma261cpo()
+Local aArea := GetArea()
+Local aAreaSX3 := SX3->(GetArea())
+SX3->( DbSetOrder(2) )
+SX3->( DbSeek('D3_USOLICI') )
+Aadd( aHeader,{ AllTrim(X3Titulo()), SX3->x3_campo, SX3->x3_picture,SX3->x3_tamanho, SX3->x3_decimal, ;
+SX3->x3_valid,SX3->x3_usado, SX3->x3_tipo, SX3->x3_arquivo, SX3->x3_context } )
+Restarea(aAreaSX3)
+Restarea(aArea)
+return()

@@ -1,0 +1,88 @@
+#INCLUDE "RWMAKE.CH"                                                   
+#INCLUDE "TOPCONN.CH" 
+#INCLUDE "PROTHEUS.CH"
+#INCLUDE "AP5MAIL.CH"
+#INCLUDE "TBICONN.CH" 
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+ฑฑบPROGRAMA  ณLIGGEN03  บAUTOR  CASSIUS CARLOS MARTINS DATA ณ  19/08/14   บฑฑ
+ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
+ฑฑบDESC.     ณ ENVIAR E-MAIL                                              บฑฑ
+ฑฑบ          ณ                                                            บฑฑ
+ฑฑบ          ณ                                                            บฑฑ
+ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
+ฑฑบUSO       ณ LIGUE                                                      บฑฑ
+ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+*/ 
+USER FUNCTION LIGGEN03(CPARA,CCOPIA,CCONHCOPIA,CASSUNTO,CTEXTO,LHTML,CFILE)
+LOCAL LOK := .F.
+CPARA  := ALLTRIM(CPARA)
+
+CDE := ALLTRIM(GETMV("MV_RELACNT"))
+
+CACCOUNT := CDE
+
+LHTML := IIF(VALTYPE(LHTML)="U",.F.,LHTML)
+
+CSERVER := ALLTRIM(GETMV("MV_RELSERV"))
+
+CPASSWORD := ALLTRIM(GETMV("MV_RELPSW"))
+
+CONNECT SMTP SERVER CSERVER ACCOUNT CACCOUNT PASSWORD CPASSWORD RESULT LOK
+
+IF LOK
+     /*IF !MAILAUTH(CACCOUNT,CPASSWORD)
+          GET MAIL ERROR CERRORMSG
+          HELP("",1,"AVG0001056",,"ERROR: "+CERRORMSG,2,0)
+          DISCONNECT SMTP SERVER RESULT LOK
+          IF !LOK
+               GET MAIL ERROR CERRORMSG
+               HELP("",1,"AVG0001056",,"ERROR: "+CERRORMSG,2,0)
+          ENDIF
+          RETURN ( .F. )
+     ENDIF */
+     IF !EMPTY(CCOPIA)
+          IF LHTML
+               IF !EMPTY(CFILE)
+                    SEND MAIL FROM CDE TO CPARA CC CCOPIA SUBJECT CASSUNTO BODY CTEXTO ATTACHMENT CFILE RESULT LOK
+               ELSE
+                    SEND MAIL FROM CDE TO CPARA CC CCOPIA SUBJECT CASSUNTO BODY CTEXTO RESULT LOK
+               ENDIF
+          ELSE
+               IF !EMPTY(CFILE)
+                    SEND MAIL FROM CDE TO CPARA CC CCOPIA SUBJECT CASSUNTO BODY CTEXTO FORMAT TEXT ATTACHMENT CFILE RESULT LOK
+               ELSE
+                    SEND MAIL FROM CDE TO CPARA CC CCOPIA SUBJECT CASSUNTO BODY CTEXTO FORMAT TEXT RESULT LOK
+               ENDIF
+          ENDIF
+     ELSE
+          IF LHTML
+               IF !EMPTY(CFILE)
+                    SEND MAIL FROM CDE TO CPARA BCC CCONHCOPIA SUBJECT CASSUNTO BODY CTEXTO ATTACHMENT CFILE RESULT LOK
+               ELSE
+                    SEND MAIL FROM CDE TO CPARA BCC CCONHCOPIA SUBJECT CASSUNTO BODY CTEXTO RESULT LOK
+               ENDIF
+          ELSE
+               IF !EMPTY(CFILE)
+                    SEND MAIL FROM CDE TO CPARA BCC CCONHCOPIA SUBJECT CASSUNTO BODY CTEXTO FORMAT TEXT ATTACHMENT CFILE RESULT LOK
+               ELSE
+                    //SEND MAIL FROM CDE TO CPARA BCC CCONHCOPIA SUBJECT CASSUNTO BODY CTEXTO FORMAT TEXT RESULT LOK
+                    SEND MAIL FROM CDE TO CPARA BCC CCONHCOPIA SUBJECT CASSUNTO BODY CTEXTO RESULT LOK
+               ENDIF
+          ENDIF
+     ENDIF
+     IF ! LOK
+          GET MAIL ERROR CERRORMSG
+          HELP("",1,"AVG0001056",,"ERROR: "+CERRORMSG,2,0)
+     ENDIF
+ELSE
+     GET MAIL ERROR CERRORMSG
+     HELP("",1,"AVG0001057",,"ERROR: "+CERRORMSG,2,0)
+ENDIF
+DISCONNECT SMTP SERVER
+
+RETURN

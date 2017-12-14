@@ -1,0 +1,23 @@
+#Include 'Protheus.ch'
+
+User Function AT310GRV()
+Local _area := getarea()
+Local _aAB7 := AB7->(getarea())
+
+dbselectarea("AB7")
+dbsetorder(9)
+if dbseek(xFilial()+ABK->ABK_NRCHAM)
+
+	U_LIGTEC10(AB7->AB7_NUMOS)
+	 
+	_memo := MSMM(ABK->ABK_CODMEM)
+	_nTam := TamSX3("ABK_MEMO")
+	_nTam1 := _nTam[1]
+			
+	MSMM(ABK->ABK_CODMEM,_nTam1,,_memo,1,,,"AB7","AB7_MEMO1")
+endif	
+	
+restarea(_aAB7)
+restarea(_area)	
+Return
+

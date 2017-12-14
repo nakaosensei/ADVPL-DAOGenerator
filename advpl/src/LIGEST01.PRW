@@ -1,0 +1,146 @@
+#INCLUDE "TOPCONN.CH"
+#INCLUDE "PROTHEUS.CH"
+
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma  ³LIGEST01  ºAutor  ³Microsiga           º Data ³  01/13/17   º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDesc.     ³ LISTAGEM DOS ITENS DAS NF DE ENTRADA                       º±±
+±±º          ³                                                            º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³ LIGUE                                                     º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+
+
+USER FUNCTION LIGEST01()
+Private cPerg := "LIGEST01"
+
+validperg()
+
+if !pergunte(cPerg,.T.)
+	return
+endif
+
+PROCESSA({|| LIGEST01()},"Processando...")
+
+return
+
+static function LIGEST01()
+
+PRIVATE oExcel := FWMSEXCEL():New()
+cWsheet := "TABELA"
+cTitulo := "LISTA ITENS NF"
+oExcel:AddworkSheet(cWsheet)
+oExcel:AddTable (cWsheet,cTitulo)
+oExcel:AddColumn(cWsheet,cTitulo,"FILIAL",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"ITEM",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"COD PROD",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"DESC PROD",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"UNID MED",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"QUANT",1,2,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"VAL UNIT",1,2,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"TOTAL",1,2,.T.)
+oExcel:AddColumn(cWsheet,cTitulo,"VAL IPI",1,2,.T.)
+oExcel:AddColumn(cWsheet,cTitulo,"VAL ICM",1,2,.T.)
+oExcel:AddColumn(cWsheet,cTitulo,"DESC NEGOCIADO",1,2,.T.)
+oExcel:AddColumn(cWsheet,cTitulo,"DESCONTO",1,2,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"TES",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"COD FORN",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"LOJA",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"NOME FORN",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"LOCAL",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"DOC",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"SERIE",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"DT EMISSAO",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"DT DIGITACAO",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"GRUPO PROD",1,1,.F.)
+oExcel:AddColumn(cWsheet,cTitulo,"TIPO PROD",1,1,.F.)
+
+cQuery := " SELECT D1_FILIAL,D1_ITEM,D1_COD,D1_UM,D1_QUANT,D1_VUNIT,D1_TOTAL,D1_VALIPI,D1_VALICM,D1_UDESCNE,D1_VALDESC,D1_TES,
+cQuery += " D1_FORNECE,D1_LOJA,D1_LOCAL,D1_DOC,D1_EMISSAO,D1_DTDIGIT,D1_GRUPO,D1_TIPO,D1_SERIE, D1_TP
+cQuery += " FROM "+RetSqlName("SD1")+" SD1 INNER JOIN "+RetSqlName("SF4")+" SF4 ON D1_TES=F4_CODIGO WHERE SD1.D_E_L_E_T_=' '
+cQuery += " AND SF4.D_E_L_E_T_=' ' AND D1_FILIAL='"+xFilial("SD1")+"' AND F4_FILIAL='"+xFilial("SF4")+"' "
+cQuery += " AND D1_DTDIGIT>='"+DTOS(MV_PAR01)+"' AND D1_DTDIGIT<='"+DTOS(MV_PAR02)+"' "
+cQuery += " AND D1_EMISSAO>='"+DTOS(MV_PAR03)+"' AND D1_EMISSAO<='"+DTOS(MV_PAR04)+"' "
+cQuery += " AND D1_FORNECE>='"+MV_PAR05+"' AND D1_FORNECE<='"+MV_PAR07+"' "
+cQuery += " AND D1_LOJA>='"+MV_PAR06+"' AND D1_LOJA<='"+MV_PAR08+"' AND D1_TIPO NOT IN ('D','B')"
+IF MV_PAR09<>3
+	IF MV_PAR09==1
+		cQuery += " AND F4_ESTOQUE='S' "
+	ELSEIF MV_PAR09==2
+		cQuery += " AND F4_ESTOQUE='N' "
+	ENDIF
+ENDIF
+IF MV_PAR10<>3
+	IF MV_PAR10==1
+		cQuery += " AND F4_DUPLIC='S' "
+	ELSEIF MV_PAR10==2
+		cQuery += " AND F4_DUPLIC='N' "
+	ENDIF
+ENDIF
+TCQUERY cQuery NEW ALIAS "TEMP"      
+MEMOWRITE("\system\LIGEST01.TXT",cQuery)
+dbselectarea("TEMP")
+while !eof()
+	
+	oExcel:AddRow(cWsheet,cTitulo,{TEMP->D1_FILIAL,TEMP->D1_ITEM,TEMP->D1_COD,POSICIONE('SB1',1,XFILIAL('SB1')+TEMP->D1_COD,'B1_DESC'),;
+	TEMP->D1_UM,TEMP->D1_QUANT,TEMP->D1_VUNIT,TEMP->D1_TOTAL,TEMP->D1_VALIPI,TEMP->D1_VALICM,TEMP->D1_UDESCNE,TEMP->D1_VALDESC,;
+	TEMP->D1_TES,TEMP->D1_FORNECE,TEMP->D1_LOJA,POSICIONE('SA2',1,XFILIAL('SA2')+TEMP->D1_FORNECE+TEMP->D1_LOJA,'A2_NOME'),;
+	TEMP->D1_LOCAL,TEMP->D1_DOC,TEMP->D1_SERIE,DTOC(STOD(TEMP->D1_EMISSAO)),DTOC(STOD(TEMP->D1_DTDIGIT)),TEMP->D1_GRUPO,TEMP->D1_TP})
+	dbselectarea("TEMP")
+	dbskip()
+enddo
+TEMP->(dbclosearea())
+                               
+cNomeArq := "LIGEST01.XML"
+_temp := gettemppath()
+oExcel:Activate()
+oExcel:GetXMLFile(_temp+cNomeArq)
+oExcelApp := MsExcel():New()
+oExcelApp:WorkBooks:Open( _temp+cNomeArq )
+oExcelApp:SetVisible(.T.)
+
+RETURN
+
+
+Static Function ValidPerg
+Local _sAlias := Alias()
+Local aRegs := {}
+Local i:= 0
+Local j:= 0
+
+dbSelectArea("SX1")
+dbSetOrder(1)
+cPerg := PADR(CPERG,10)
+//          Grupo/Ordem/Pergunta/                                           Variavel/Tipo/Tamanho/Decimal/Presel/GSC/Valid/Var01/Def01/Cnt01/Var02/Def02/Cnt02/Var03/Def03/Cnt03/Var04/Def04/Cnt04/Var05/Def05/Cnt05
+aAdd(aRegs,{cPerg,"01","Data Digitacao de            ?","?","?","mv_ch1","D",08,0,0,"G","","Mv_Par01","","","","","","","","","","","","","","","","","","","","","","","","",""})
+aAdd(aRegs,{cPerg,"02","Data Digitacao ate           ?","?","?","mv_ch2","D",08,0,0,"G","","Mv_Par02","","","","","","","","","","","","","","","","","","","","","","","","",""})
+aAdd(aRegs,{cPerg,"03","Data Emissao de              ?","?","?","mv_ch3","D",08,0,0,"G","","Mv_Par03","","","","","","","","","","","","","","","","","","","","","","","","",""})
+aAdd(aRegs,{cPerg,"04","Data Emissao ate             ?","?","?","mv_ch4","D",08,0,0,"G","","Mv_Par04","","","","","","","","","","","","","","","","","","","","","","","","",""})
+aAdd(aRegs,{cPerg,"05","Fornecedor de                ?","?","?","mv_ch5","C",09,0,0,"G","","Mv_Par05","","","","","","","","","","","","","","","","","","","","","","","","","SA2"})
+aAdd(aRegs,{cPerg,"06","Loja de                      ?","?","?","mv_ch6","C",03,0,0,"G","","Mv_Par06","","","","","","","","","","","","","","","","","","","","","","","","",""})
+aAdd(aRegs,{cPerg,"07","Fornecedor ate               ?","?","?","mv_ch7","C",09,0,0,"G","","Mv_Par07","","","","","","","","","","","","","","","","","","","","","","","","","SA2"})
+aAdd(aRegs,{cPerg,"08","Loja ate                     ?","?","?","mv_ch8","C",03,0,0,"G","","Mv_Par08","","","","","","","","","","","","","","","","","","","","","","","","",""})
+aAdd(aRegs,{cPerg,"09","TES movimenta Estoque?       ?","?","?","mv_ch9","N",01,0,0,"C","","Mv_Par09","Sim","","","","","Nao","","","","","Ambos","","","","","","","","","","","","","",""})
+aAdd(aRegs,{cPerg,"10","TES gera Financeiro?         ?","?","?","mv_cha","N",01,0,0,"C","","Mv_Par10","Sim","","","","","Nao","","","","","Ambos","","","","","","","","","","","","","",""})
+
+For i:=1 to Len(aRegs)
+	If !dbSeek(cPerg+aRegs[i,2])
+		RecLock("SX1",.T.)
+		For j:=1 to FCount()
+			If j <= Len(aRegs[i])
+				FieldPut(j,aRegs[i,j])
+			Endif
+		Next
+		MsUnlock()
+	Endif
+Next
+
+dbSelectArea(_sAlias)
+Return

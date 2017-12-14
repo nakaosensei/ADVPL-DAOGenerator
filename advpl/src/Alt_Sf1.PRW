@@ -1,0 +1,87 @@
+#include "rwmake.ch"
+#include "protheus.ch"
+#include "topconn.ch"     
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma  ³OBS_SF1   ºAutor  ³Everton Forti       º Data ³  29/08/14   º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDesc.     ³ Funcao pra colocar uma observacao na NFE do tipo           º±±
+±±º          ³ Importacao, pra ser impresso na Danfe                      º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³ Ligue						                              º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+	User function Alt_SF1()
+Private cCadastro := "Altera Observação NF Entrada"
+
+Private aRotina := { {"Pesquisar","AxPesqui",0,1} ,;
+                     {"Visualizar","U_Visobs",0,2},;
+                     {"Alterar","U_Obs_Sf1",0,4}}
+
+Private cDelFunc := ".T." 
+
+Private cString := "SF1"
+
+dbSelectArea("SF1")
+dbSetOrder(1)
+
+dbSelectArea(cString)
+mBrowse( 6,1,22,75,cString,,)
+
+Return
+
+User Function Obs_Sf1()
+Local lOk:=.f.
+Local oDlg
+
+_UF := posicione("SA2",1,XFILIAL("SA2")+SF1->F1_FORNECE+SF1->F1_LOJA,"A2_EST")
+
+cTexto := SF1->F1_UOBSSF1
+
+@ 116,001 To 416,1020 Dialog oDlgMemo Title "Alteracão Entrada Nota Fiscal"
+@ 05,10 say "Documento : "+SF1->F1_DOC+" Serie: "+SF1->F1_SERIE  of OdlgMemo Pixel
+
+@ 12,10 Get cTexto Size 490,120 MEMO of OdlgMemo Pixel
+
+@ 135,200 Button "Salvar"         Size 35,14 Action FRSalva() of OdlgMemo Pixel
+@ 135,250 Button "Sair"          Size 35,14 Action Close(oDlgMemo) of OdlgMemo Pixel
+Activate Dialog oDlgMemo  
+Return
+
+static function valTexto()
+	if len(alltrim(cTexto))>400
+		msginfo("Texto muito grande. No maximo 400 caracteres.")
+		return .f.
+	endif
+return .t.
+
+Static Function FRSalva()
+	IF valTexto()
+		RecLock("SF1",.f.)
+		SF1->F1_UOBSSF1 := cTexto
+		msunlock()               
+		msginfo("Mensagem gravada com sucesso")
+		Close(oDlgMemo)
+	endif
+Return
+
+User Function VISOBS()
+
+Local lOk:=.f.
+Local oDlg
+
+_UF := posicione("SA2",1,XFILIAL("SA2")+SF1->F1_FORNECE+SF1->F1_LOJA,"A2_EST")
+
+cTexto := SF1->F1_UOBSSF1
+
+@ 116,001 To 416,1020 Dialog oDlgMemo Title "Visualizacão Entrada Nota Fiscal"
+@ 05,10 say "Documento : "+SF1->F1_DOC+" Serie: "+SF1->F1_SERIE  of OdlgMemo Pixel
+@ 12,10 Get cTexto Size 490,120 MEMO of OdlgMemo Pixel
+@ 135,250 Button "Sair"          Size 35,14 Action Close(oDlgMemo) of OdlgMemo Pixel
+Activate Dialog oDlgMemo  
+
+Return

@@ -1,0 +1,342 @@
+#include "protheus.ch"
+#include "topconn.ch"
+
+/*
+PONTO DE ENTRADA NA FINALIZAÇÃO DA O.S.
+*/
+
+User Function AT450GRV()
+	Local _area := getarea()
+	Local _aAB7 := AB7->(getarea()) 
+	Local _cCodAda
+	Local _cSituBoas := getmv("MV_UBOASV") //Situacao do boas vindas
+	
+	dbselectarea("AB7")
+	dbsetorder(1)
+	dbseek(xFilial()+AB6->AB6_NUMOS)
+	while !eof() .AND. xFilial()+AB6->AB6_NUMOS==AB7->AB7_FILIAL+AB7->AB7_NUMOS
+		IF AB7->AB7_TIPO=='5' //ENCERRADO
+			dbselectarea("SZ2")
+			dbsetorder(2)//Z2_FILIAL+Z2_NUMOS+Z2_PRODUTO+Z2_ITEMOS
+			if dbseek(xFilial()+AB7->AB7_NUMOS+AB7->AB7_CODPRO+AB7->AB7_ITEM) 
+				if SZ2->Z2_EXECUTA!="S"				
+					if ALLTRIM(SZ2->Z2_ACAO)=="INICIO VIGENCIA"   
+						               
+						 _cCodAda := SZ2->Z2_NUMCTR
+						//INICIO - CASSIUS - 13/08/14 - REGRA PARA VALORES PARCELADOS DE O.S. CONFORMTE TELEVENDAS
+						DBSELECTAREA("ADA")
+						DBSETORDER(1)
+						DBSEEK(XFILIAL()+SZ2->Z2_NUMCTR)
+						 
+						DBSELECTAREA("ADB")
+						DBSETORDER(1)
+						IF DBSEEK(XFILIAL()+SZ2->Z2_NUMCTR+SZ2->Z2_ITEMCTR)
+							IF EMPTY(ADB->ADB_UNUMAT)
+								RECLOCK("ADB",.F.)
+								IF EMPTY(AB6->AB6_UDTVIG)
+									ADB->ADB_UDTINI := DDATABASE
+									AB6->AB6_UDTVIG  := DDATABASE
+								ELSE
+									ADB->ADB_UDTINI := AB6->AB6_UDTVIG
+								ENDIF
+								MSUNLOCK()
+								DBSELECTAREA("SZ2")
+								RECLOCK("SZ2",.F.)
+								SZ2->Z2_EXECUTA := "S"
+								MSUNLOCK()						
+							ELSE
+									DBSELECTAREA("SB1")
+									DBSETORDER(1)
+									DBSEEK(XFILIAL("SB1")+ADB->ADB_CODPRO) 
+									IF EMPTY(AB6->AB6_UDTVIG)
+										_DDTEXEC := DDATABASE
+										AB6->AB6_UDTVIG  := DDATABASE
+									ELSE
+									 	_DDTEXEC := AB6->AB6_UDTVIG
+									ENDIF  
+									
+									//LEVAR EM CONSIDERACAO DT DE INICIO QUANDO FOR ITEM DE NAO CONTRATO, EX: SERVICO DE INSTALACAO
+									IF SB1->B1_UITCONT =="N"
+										IF DAY(_DDTEXEC)<=(ADA->ADA_UDIAFE)
+											_DDTEXEC := STOD(ANOMES(MONTHSUB(_DDTEXEC,1))+ALLTRIM(STR(ADA->ADA_UDIAFE+1)))
+										ELSE
+											_DDTEXEC := STOD(ANOMES(_DDTEXEC)+ALLTRIM(STR(ADA->ADA_UDIAFE+1))) 
+										ENDIF  
+									ENDIF
+									
+									_DINIVIG := MONTHSUM(_DDTEXEC,ADB->ADB_UMESIN)
+									_DFIMVIG := STOD("")                  
+									_NQTPARC := ADB->ADB_UMESCO
+									_NUNIT   := 0
+									_NTOTAL	 := 0
+									IF ADB->ADB_UMESCO!=0
+										_DFIMVIG := MONTHSUM(_DINIVIG,ADB->ADB_UMESCO)
+									
+							            _CQUERY := " SELECT ABA.*, AA5.AA5_TES, AA5.AA5_PRCCLI "
+										_CQUERY += " FROM "+RETSQLNAME("ABA")+" ABA "
+							            _CQUERY += " INNER JOIN "+RETSQLNAME("AB6")+" AB6 ON AB6.AB6_FILIAL=ABA.ABA_FILIAL AND AB6.AB6_NUMOS=SUBSTRING(ABA.ABA_NUMOS,1,6) AND AB6.AB6_STATUS<>'A' AND AB6.D_E_L_E_T_=' ' " 
+							            _CQUERY += " INNER JOIN "+RETSQLNAME("AB9")+" AB9 ON ABA.ABA_FILIAL=AB9.AB9_FILIAL AND AB9.AB9_NUMOS=ABA.ABA_NUMOS "
+							            _CQUERY += " INNER JOIN "+RETSQLNAME("AA5")+" AA5 ON ABA.ABA_CODSER=AA5.AA5_CODSER AND AA5.AA5_PRCCLI>0 AND AA5.D_E_L_E_T_=' ' "
+							            _CQUERY += " WHERE AB9.D_E_L_E_T_=' ' "
+							            _CQUERY += " AND SUBSTRING(ABA.ABA_NUMOS,1,6) = '"+SZ2->Z2_NUMOS+"' "
+							            _CQUERY += " AND ABA.ABA_UTOTAL > 0 "
+							            _CQUERY += " AND ABA.D_E_L_E_T_ = ' ' "
+							            _CQUERY += " ORDER BY ABA.ABA_FILIAL, ABA.ABA_NUMOS "
+							            _CQUERY := CHANGEQUERY(_CQUERY)              
+							            IF SELECT("TRAB8")!=0
+							            	TRAB8->(DBCLOSEAREA())
+							            ENDIF
+							            TCQUERY _CQUERY NEW ALIAS "TRAB8"
+							            DBSELECTAREA("TRAB8")                                        
+							            DBGOTOP()
+							            WHILE !EOF()                                    
+							                _NUNIT  += ROUND((TRAB8->ABA_UTOTAL*TRAB8->AA5_PRCCLI)/100,2) //SOMENTE PERCENTUAL FATURADO PARA O CLIENTE - AA5_PRCCLI
+							                DBSKIP()
+							            ENDDO
+							            _NTOTAL  := _NUNIT*ADB->ADB_QUANT
+							            TRAB8->(DBCLOSEAREA())           		
+									ENDIF    
+									
+									
+													
+									//INICIO CODIGO ROBSON 29092014
+									//PEGAR NUMERO DE COBRANDO QUANDO PRODUTO FOR DO TIPO 0101 QUE É TELEFONE		
+									_cCodGrup := getmv("MV_UGRNCOB") // Parametro para pegar Grupo do Produto que precisa do numerod e cobrança
+										
+									IF (SB1->B1_GRUPO == _cCodGrup)														 					 					 					 					 				 
+										dbselectarea("ADA")
+										dbsetorder(1)
+										IF dbseek(xFilial("ADA")+ _cCodAda)
+											IF !EMPTY(ADA->ADA_UNRCOB)
+												IF msgyesno("Contrato já contém numero de cobrança : " + ADA->ADA_UNRCOB + "! Tem certeza que deseja trocar o numero ?") 
+													AT450B()
+												ENDIF 
+											ELSE
+												AT450B()			
+										 	ENDIF
+					 					ENDIF	
+									ENDIF			
+									//FIM CODIGO NUMERO DE COBRANÇA			
+					 				
+									//PEGAR CODIGO DO YATE QUANDO CAMPO NO CTR TIVER VAZIO	
+									IF SB1->B1_UITCONT =="S"		
+										dbselectarea("ADA")
+										dbsetorder(1)
+										IF dbseek(xFilial("ADA")+ _cCodAda)		
+											IF EMPTY(ADA->ADA_UIDYAT)
+												//CHAMAR ROTINA PARA PEGAR CODIGO DO YATE
+												AT450D() 
+											ENDIF
+										ENDIF	
+									ENDIF
+									//FIM CODIGO DO YATE		            
+														            
+									DBSELECTAREA("ADB")
+									RECLOCK("ADB",.F.)
+										ADB->ADB_UDTINI := _DINIVIG
+										ADB->ADB_UDTFIM	:= _DFIMVIG
+										IF _NUNIT>0 //SE NAO HOUVE APONTAMENTO DE PRODUTOS QUE JUSTIFIQUE A ALTERACAO DO VALOR MANTEM O QUE ESTA NO CONTRATO.
+											ADB->ADB_PRCVEN := _NUNIT
+											ADB->ADB_TOTAL  := _NTOTAL
+										ENDIF
+									MSUNLOCK()   
+									
+									//VERIFICAR O.S ENCERRADAS POR SITUACAO       
+									AT450E(AB6->AB6_USITU1)
+									
+									DBSELECTAREA("SZ2")
+									RECLOCK("SZ2",.F.)
+										SZ2->Z2_EXECUTA := "S"
+									MSUNLOCK()				   
+								ENDIF
+						ENDIF
+						//FIM CASSIUS - 13/08/14                
+						
+					elseif ALLTRIM(SZ2->Z2_ACAO)=="FINAL VIGENCIA"    
+						IF EMPTY(AB6->AB6_UDTVIG)
+					   		AB6->AB6_UDTVIG  := DDATABASE
+						ENDIF
+					
+					   //	_areaAB9 := AB9->(GETAREA())
+					   //	dbselectarea("AB9")
+					  //	dbsetorder(1)//AB9_FILIAL+AB9_NUMOS+AB9_CODTEC+AB9_SEQ
+					   //	if dbseek(xFilial()+AB7->AB7_NUMOS+AB7->AB7_ITEM)													
+						DBSELECTAREA("ADB")
+						DBSETORDER(1) //ADB_FILIAL+ADB_NUMCTR+ADB_ITEM
+						IF DBSEEK(XFILIAL()+SZ2->Z2_NUMCTR+SZ2->Z2_ITEMCTR)	
+							RECLOCK("ADB",.F.)
+						   		ADB->ADB_UDTFIM := AB6->AB6_UDTVIG
+							MSUNLOCK()	                      
+							DBSELECTAREA("SZ2")
+							RECLOCK("SZ2",.F.)
+						  		SZ2->Z2_EXECUTA := "S"
+							MSUNLOCK()
+						ENDIF
+					   //	endif
+					   //	restarea(_areaAB9)
+					endif				
+				endif
+			endif	
+		ENDIF
+
+		dbselectarea("AB7")
+		dbskip()
+	enddo
+	
+	restarea(_aAB7)
+	restarea(_area)
+return         
+
+STATIC FUNCTION AT450A() //DIALOG PARA PEGAR NUMERO DE COBRANÇA
+	Private oDlg
+	Private oButton1
+	Private oFont1 := TFont():New("MS Sans Serif",,022,,.F.,,,,,.F.,.F.)
+	Private oGet1
+	Private cGet1 := SPACE(20) //SERIAL, VAI GRAVAR NO AA3_NUMSER
+	Private oSay1
+										
+	DEFINE MSDIALOG oDlg TITLE "INFORMAR O NUMERO DE COBRANÇA" FROM 000, 000  TO 190, 400 COLORS 0, 16777215 PIXEL
+	@ 008, 004 SAY oSay1 PROMPT "Favor informar o numero de cobrança do plano:" SIZE 185, 014 OF oDlg FONT oFont1 COLORS 0, 16777215 PIXEL
+	@ 024, 005 MSGET oGet1 VAR cGet1 SIZE 075, 010 OF oDlg COLORS 0, 16777215 PIXEL
+	@ 062, 151 BUTTON oButton1 PROMPT "OK" action oDlg:End() SIZE 037, 012 OF oDlg PIXEL
+	ACTIVATE MSDIALOG oDlg		
+RETURN cGet1
+
+STATIC FUNCTION AT450B() //GRAVAR ADA
+
+_cNumCob := AT450A()
+WHILE EMPTY(ALLTRIM(_cNumCob)) .OR. LEN(ALLTRIM(cValToChar(_cNumCob))) < 10
+	_cNumCob := AT450A()
+ENDDO
+			
+reclock("ADA",.F.)
+	ADA->ADA_UNRCOB := _cNumCob
+msunlock()		
+									
+RETURN 
+
+
+STATIC FUNCTION AT450C() //DIALOG PARA PEGAR CODIGO DO YATE
+	Private oDlg
+	Private oButton1
+	Private oFont1 := TFont():New("MS Sans Serif",,022,,.F.,,,,,.F.,.F.)
+	Private oGet1
+	Private cGet1 := SPACE(20)
+	Private oSay1
+										
+	DEFINE MSDIALOG oDlg TITLE "INFORMAR O CODIGO DO YATE" FROM 000, 000  TO 190, 400 COLORS 0, 16777215 PIXEL
+	@ 008, 004 SAY oSay1 PROMPT "Favor informar o código de cadastro no YATE:" SIZE 185, 014 OF oDlg FONT oFont1 COLORS 0, 16777215 PIXEL
+	@ 024, 005 MSGET oGet1 VAR cGet1 SIZE 075, 010 OF oDlg COLORS 0, 16777215 PIXEL
+	@ 062, 151 BUTTON oButton1 PROMPT "OK" action oDlg:End() SIZE 037, 012 OF oDlg PIXEL
+	ACTIVATE MSDIALOG oDlg		
+RETURN cGet1
+
+STATIC FUNCTION AT450D() //GRAVAR ADA
+
+_cNumYate := AT450C()
+WHILE EMPTY(ALLTRIM(_cNumYate))
+	_cNumYate := AT450C()
+ENDDO
+			
+reclock("ADA",.F.)
+	ADA->ADA_UIDYAT := _cNumYate
+msunlock()		
+									
+RETURN 
+
+STATIC FUNCTION AT450E(_cSitu) //VALIDAR SE TEM MAIS O.S DE ACORDO COM SITUACAO PASSADA
+Local _area := getarea()
+Local _aAB6 := AB6->(getarea())  
+Local _cSituAti := getmv("MV_UASUATI") //Cod situacao Ativacao
+Local _cSituIst := getmv("MV_UASUIST") //Cod situacao Instalacao
+Local _nCtr := AB6->AB6_UNUMCT
+Local _emails := ""
+Local _MSG := ""
+Local _Titulo := ""
+
+
+cont := 0	
+dbselectarea("AB6")
+dbsetorder(7)//Z2_FILIAL+AB6_UNUMCT
+if dbseek(xFilial()+_nCtr) 
+		while !eof() .AND. xFilial()+_nCtr==AB6->AB6_FILIAL+AB6->AB6_UNUMCT
+			IF _cSitu = AB6_USITU1	.AND. AB6->AB6_STATUS <> 'E'
+				cont++
+			ENDIF	
+				
+			dbselectarea("AB6")
+			dbskip()
+		enddo
+ENDIF
+restarea(_aAB6)	
+		
+
+	
+	IF cont = 0
+			IF _cSituAti = _cSitu
+				_emails := getmv("MV_UEMLOSB") //Emails para envolvidos na validação do Ordem Serviço Boas Vindas
+				//Chamar Funcao para montar Itens (AB7) da O.S
+				_cOcoBoas := getmv("MV_UOCOBOA") // Cod. Ocorrencia para Boas Vindas
+				_cAtboas := getmv("MV_UATBOAS") // Cod. Atendente para Boas Vindas
+				aItens := U_LIGTEC08(AB6->AB6_CODCLI,AB6->AB6_LOJA,_cOcoBoas)		                              				
+				//Funcao que monta o cabecalho(AB6) da O.S e usa TECA450 para gerar chamados
+									//1	Cliente		2 Loja 		  3	Cond Pgto		4 msg	5 itens, 6 ATENDE, 7 ASSUNTO, 8 CTR
+		   		_os := U_LIGTEC07(AB6->AB6_CODCLI, AB6->AB6_LOJA,AB6->AB6_CONPAG,"OS DE BOAS VINDAS",aItens,_cAtboas,"7",_nCtr)		
+		   		
+		   		if empty(_os) //GERAR SZ2 PARA FIM DE VINGENCIA NOS ITENS DO CONTRATO ANTIGO QUANDO FOR RETIRADO O EQUIPAMENTO
+		   			MsgInfo("NÃO FOI POSSIVEL CRIAR A ORDEM DE BOAS VINDAS PARA O CLIENTE: "  + AB6->AB6_CODCLI," Msg Info ")
+		   			memowrite("\logerro\ERRO_"+strtran(time(),":","")+".log","ERRO AO TENTAR INCLUIR UMA OS	DO BOAS VINDAS "+ADB->ADB_NUMCTR+" NA ROTINA AT450GRV")	
+				else
+					dbselectarea("SA1")
+					dbsetorder(1)//Z2_FILIAL+AB6_UNUMCT
+					if dbseek(xFilial("SA1")+AB6->AB6_CODCLI+AB6->AB6_LOJA) 
+						_MSG := "<p>Nova Ordem de Serviço criada para Primeira Visita.</p>"
+						_MSG += "<p>Num OS: <b>" + AB6->AB6_NUMOS + "</b></p>"
+		   				_MSG += "<p>Código : " + AB6->AB6_CODCLI + " Nome : " + SA1->A1_NOME + "</p>"
+		   				_MSG += "<p>Endereço : " + SA1->A1_END + ", Bairro : " + SA1->A1_BAIRRO + ", Cidade : " + SA1->A1_MUN + "</p>"
+		   				_MSG += "<p>Telefone : (" + SA1->A1_DDD + ")" + SA1->A1_TEL + ", Cel : " + SA1->A1_CEL + "</p>"
+						_MSG += "<p>Favor entrar em contato para agendamento da visita.</p>"
+		   			   
+						_Titulo := "Primeira visita"
+					ENDIF
+				endif	
+			ENDIF
+			IF _cSituIst = _cSitu
+			   /* _emails := getmv("MV_UEMLOSI") //Emails para envolvidos na Ordem de serviço de instalacao
+				_Titulo := "O.S Instalação"
+				_MSG := "<p>Nova Ordem de Serviço criada para Primeira Visita.</p>"
+				_cCaixa := ""
+				_cSplitter := ""
+				_cPorta := ""		
+				_cMac := ""
+				_cSerial := ""
+				
+				_aAA3 := AA3->(getarea()) 
+				DbSelectArea("AA3")
+				DbSetOrder(1)//AA3_FILIAL+AA3_CODCLI+AA3_LOJA+AA3_CODPRO+AA3_NUMSER
+				if dbseek(xFilial()+AB6->AB6_CODCLID+AB6->AB6_LOJA+AB7->AB7_CODPRO+AB7->AB7_NUMSER)
+					_cCaixa := AA3->AA3_UCAIXA
+					_cSplitter := AA3->AA3_USPLT
+					_cPorta := AA3->AA3_UPORTA
+					_cMac := AA3->AA3_UMAC
+					_cSerial := AA3->AA3_CHAPA
+				endif
+				restarea(_aAA3)
+				
+				_aADA := ADA->(getarea())  
+				dbselectarea("ADA")
+				dbsetorder(1)
+				IF dbseek(xFilial("ADA")+ _nCtr)	
+					U_LIGTEC09(_cCaixa,_cSplitter,_cPorta,_cMac,_cSerial)
+				ENDIF
+				restarea(_aADA)
+				*/
+			ENDIF
+			/*
+			IF !EMPTY(_emails)
+				U_LIGGEN03(_emails,"","",_Titulo,_MSG,.T.,"")
+			ENDIF*/
+ENDIF	
+	
+restarea(_area)		
+RETURN 

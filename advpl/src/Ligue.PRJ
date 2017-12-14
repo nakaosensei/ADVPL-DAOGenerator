@@ -1,0 +1,696 @@
+Group Ligue
+   Version=7.0
+   VSSDB=
+   HasProperties=1
+   Properties
+      BeforeApply=
+      AfterApply=
+      Icon=
+      ID=
+      Version=
+      PalmName=
+      OutPut=
+   End
+   ProjectsCount=9
+   Project Genericos
+      FoldersCount=5
+      Folder Fontes
+         VSSPath=Fontes
+         FilesCount=21
+         File \TOTVS11\my projects\LIGCAD02.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGCAD01.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN01.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN02.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGVAL01.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\ZNOACENT.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN03.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\IMPAA3.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN07.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN08.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN09.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN04.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN05.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN06.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN10.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN12.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGCSA1.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LGFTUMSK.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGITOSVLD.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LGITEMOSVLD.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGGEN13.prw
+             Type=T
+         End
+      End
+      Folder PE
+         VSSPath=Definições
+         FilesCount=3
+         File \TOTVS11\my projects\MA030TOK.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\MA020TDOK.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\M030INC.PRW
+             Type=T
+         End
+      End
+      Folder Relatorios
+         VSSPath=Nova Pasta3
+         FilesCount=0
+      End
+      Folder Model
+         VSSPath=Nova Pasta4
+         FilesCount=5
+         File \TOTVS11\my projects\AGASA1_MVC.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\AGBSA1_MVC.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\AB6AB7_MVC.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\AB9_MVC.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\AB6AB7A_MVC.PRW
+             Type=T
+         End
+      End
+      Folder ws
+         VSSPath=Nova Pasta5
+         FilesCount=2
+         File \TOTVS11\my projects\LIGWS002.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGWS001.PRW
+             Type=T
+         End
+      End
+   End
+   Project Faturamento
+      FoldersCount=4
+      Folder Fontes
+         VSSPath=Nova Pasta1
+         FilesCount=17
+         File \TOTVS11\my projects\LIGFAT01.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT02.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT03.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT04.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT05.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT06.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT07.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT09.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT10.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT12.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT14.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\BIRT2.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\CADSZ8.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT16.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT17.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT20.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT22.prw
+             Type=T
+         End
+      End
+      Folder PE
+         VSSPath=Nova Pasta2
+         FilesCount=5
+         File \TOTVS11\my projects\MS520DEL.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\MS520VLD.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\FT400TOK.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\FT400MNU.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\M460FIM.prw
+             Type=T
+         End
+      End
+      Folder Relatorios
+         VSSPath=Nova Pasta3
+         FilesCount=6
+         File \TOTVS11\my projects\UFATR030.PRX
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT08.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT11.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT13.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT15.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFAT18.PRW
+             Type=T
+         End
+      End
+      Folder NFSe
+         VSSPath=Nova Pasta4
+         FilesCount=5
+         File \TOTVS11\my projects\NFSe\NFSEXml001.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\NFSe\NFSEXml002.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\NFSe\NFSEXml003.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\NFSe\NFSEXml102.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\NFSe\nfsexmlenv.prw
+             Type=T
+         End
+      End
+   End
+   Project Financeiro
+      FoldersCount=3
+      Folder Fontes
+         VSSPath=Nova Pasta1
+         FilesCount=12
+         File \TOTVS11\my projects\LIGFIN01.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN02.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN03.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN05.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN06.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN09.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN10.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN13.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN14.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN15.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN20.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN17.prw
+             Type=T
+         End
+      End
+      Folder PE
+         VSSPath=Nova Pasta2
+         FilesCount=7
+         File \TOTVS11\my projects\FA070POS.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\FA040DEL.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\F200VAR.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\FI040ROT.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\F200IMP.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\M040SE1.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\M4601DUP.prw
+             Type=T
+         End
+      End
+      Folder Relatorios
+         VSSPath=Nova Pasta3
+         FilesCount=5
+         File \TOTVS11\my projects\LIGFIN04.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN07.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN08.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN11.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIN12.prw
+             Type=T
+         End
+      End
+   End
+   Project Call Center
+      FoldersCount=3
+      Folder Fontes
+         VSSPath=Nova Pasta1
+         FilesCount=13
+         File \TOTVS11\my projects\LIGCAL01.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGCAL02.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\mBrwADA.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGCAL04.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\mBrwADA2.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGCAL05.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGCAL06.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\mBrwADA3.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGCAL08.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGNKUT.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGATOSW.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGCAL09.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGCAL10.PRW
+             Type=T
+         End
+      End
+      Folder PE
+         VSSPath=Nova Pasta2
+         FilesCount=9
+         File \TOTVS11\my projects\TMKVPED.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\TK271BOK.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\TMKOUT.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\TMKVOK.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\TK271FCPY.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\TMKBARLA.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\TK271ROTM.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\TK271FIL.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\TK271ABR.PRW
+             Type=T
+         End
+      End
+      Folder Relatorios
+         VSSPath=Nova Pasta3
+         FilesCount=1
+         File \TOTVS11\my projects\LIGCAL03.PRW
+             Type=T
+         End
+      End
+   End
+   Project Field Service
+      FoldersCount=3
+      Folder PE
+         VSSPath=Nova Pasta1
+         FilesCount=15
+         File \TOTVS11\my projects\AT450GRV.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\TK271BOK.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\TC450ROT.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\AT450BUT.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\AT300GRV.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\AT310GRV.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\AT460BUT.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\TC450COR.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\TC450LEG.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\AT300FIL.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\AT450TOK.PRW
+             Type=T
+         End
+         File \TOTVS11TESTE\my projects\TK271ROTM.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\AT460GRV.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\AT300BUT.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\AT450LOK.prw
+             Type=T
+         End
+      End
+      Folder Fontes
+         VSSPath=Nova Pasta2
+         FilesCount=20
+         File \TOTVS11\my projects\LIGTEC02.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC01.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC04.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC05.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC06.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC07.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC08.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC09.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC10.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC11.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC12.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC14.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC17.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC18.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\AB9TRCDAT.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\AB9TRCDCL.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\vldAB9Atd.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\FILTRAAA7.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGOSDES.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGOSOBS.prw
+             Type=T
+         End
+      End
+      Folder Relatorios
+         VSSPath=Nova Pasta3
+         FilesCount=2
+         File \TOTVS11\my projects\LIGTEC03.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGTEC15.prw
+             Type=T
+         End
+      End
+   End
+   Project Compras
+      FoldersCount=3
+      Folder PE
+         VSSPath=Nova Pasta1
+         FilesCount=13
+         File \TOTVS11\my projects\SD1100I.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\MT110CFM.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\MT110COR.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\MT110LEG.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\MT097END.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\M130FIL.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\MSC1110D.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\MT110ALT.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\MT120ALT.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\MT120LEG.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\MT120COR.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\MT120BRW.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\AVALCOT.PRW
+             Type=T
+         End
+      End
+      Folder Fontes
+         VSSPath=Nova Pasta2
+         FilesCount=6
+         File \TOTVS11\MY PROJECTS\ALT_SF1.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGCOM01.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGCOM02.PRW
+             Type=T
+         End
+         File \TOTVS11\my projects\IMPIRPF.CH
+             Type=T
+         End
+         File \TOTVS11\my projects\MATA097.CH
+             Type=T
+         End
+         File \TOTVS11\my projects\MATA097.PRW
+             Type=T
+         End
+      End
+      Folder Relatorios
+         VSSPath=Nova Pasta3
+         FilesCount=1
+         File \TOTVS11\my projects\Umatr110.prx
+             Type=T
+         End
+      End
+   End
+   Project Fiscal
+      FoldersCount=3
+      Folder Fontes
+         VSSPath=Nova Pasta1
+         FilesCount=2
+         File \TOTVS11\my projects\GeraSFX.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\LIGFIS01.prw
+             Type=T
+         End
+      End
+      Folder PE
+         VSSPath=Nova Pasta2
+         FilesCount=1
+         File \TOTVS11\my projects\CV115MUN.prw
+             Type=T
+         End
+      End
+      Folder Relatorios
+         VSSPath=Nova Pasta3
+         FilesCount=0
+      End
+   End
+   Project Sped
+      FoldersCount=3
+      Folder Fontes
+         VSSPath=Nova Pasta1
+         FilesCount=3
+         File \TOTVS11\my projects\nfesefaz.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\danfeiii.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\danfeii.prw
+             Type=T
+         End
+      End
+      Folder PE
+         VSSPath=Nova Pasta2
+         FilesCount=0
+      End
+      Folder Relatorios
+         VSSPath=Nova Pasta3
+         FilesCount=0
+      End
+   End
+   Project Estoque/Custos
+      FoldersCount=3
+      Folder PE
+         VSSPath=Nova Pasta1
+         FilesCount=3
+         File \TOTVS11\my projects\MA261IN.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\MA261D3.prw
+             Type=T
+         End
+         File \TOTVS11\my projects\ma261cpo.PRW
+             Type=T
+         End
+      End
+      Folder Relatorios
+         VSSPath=Nova Pasta2
+         FilesCount=1
+         File \TOTVS11\my projects\LIGEST01.PRW
+             Type=T
+         End
+      End
+      Folder Rotinas
+         VSSPath=Nova Pasta3
+         FilesCount=0
+      End
+   End
+End

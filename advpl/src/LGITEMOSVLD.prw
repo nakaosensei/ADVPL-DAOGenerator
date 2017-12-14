@@ -1,0 +1,95 @@
+#include 'protheus.ch'
+#include 'parmtype.ch'
+
+/*
+	@author: nakao / nakaosensei@gmail.com
+	A rotina a seguir e chamada pela trigger AB7_TIPO,
+	serve para validar se o item da OS pode ser encerrado 
+	ou nao dependendo de:
+	1) Existem atendimentos(AB9) para aquele item que tenham despesas(ABC)
+	
+	A validacao ocorre da seguinte forma, se houver alguma despesa que contenha uma
+	quantidade de produtos que esteja mais do que existe no estoque(SB2), o item de OS 
+	nao podera ser encerrado.	
+	Parametros da funcao:
+	M->AB7_TIPO, AB7->AB7_TIPO, M->AB7_UBAIXA,M->AB7_ITEM
+*/
+user function LGITEMOSVLD(posTipo, preTipo, baixa, item)	
+	Local _area := getarea() //Area corrente 	
+	Local uNkProblems := {} //Array usado para validacao
+	Local uNkOS := M->AB6_NUMOS //Num OS
+	Local uNkItem := "" //Item da OS
+	Local uNkCodTec := AB6->AB6_UCODAT //Codigo do atendente da OS
+	Local unkCabEM := "" //String para exibir ra mensagem de erro de strOut com o cabecalho no comeco
+	Local unkErrorMsg := u_barraN("O seguinte item de O.S não pode ser encerrado, pois faltaram os seguintes produtos no estoque:") //String para armazenar mensagem de erro, funcao no lignkut.prw
+	Local tpAntGrv := ALLTRIM(preTipo) //Valor de AB7_TIPO antes do usuario ter aberto a tela para editar o item da os
+	Local tpDpsGrv := ALLTRIM(posTipo)	//Valor de AB7_TIPO depois do usuario ter aberto a tela de OS e selecionado um estado para um determinado item
+	Local uNkBaixa := ALLTRIM(baixa) //Valor de AB7_UBAIXA 
+	MsgAlert(item)
+	IF !Inclui
+		CONOUT("ENTROU LIGITOSVLD "+TIME())		
+		uNkItem := item
+		dbselectarea("AB7")
+		dbsetorder(1)
+		dbseek(xFilial("AB6")+uNkOS+uNkItem)		
+		
+		IF tpDpsGrv=='5' .and. ALLTRIM(uNkBaixa)<> "S" //Se o item da OS ainda nao foi baixado
+			CONOUT("ENTROU NA CONDICAO AB7_TIPO = 5, AB7_BAIXA DIFERENTE DE S")
+			_aABC := ABC->(getarea())
+			dbselectarea("ABC")
+			dbsetorder(1)//ABC_FILIAL+ABC_NUMOS+ABC_CODTEC+ABC_SEQ+ABC_ITEM
+			//Verifica se aquele item tem despesas(ABC)
+			/*
+			O dbSeek a seguir pode parecer estranho, mas eu o irei explicar.
+			Perceba que o campo ABC_NUMOS e composto pelo numero da OS de 6 caracteres mais os dois
+			ultimos caracteres que sao referentes ao item daquela OS, no dbSeek o uNkItem nao vai
+			filtrar por ABC_CODTEC+ABC_SEQ, mas sim pelo item da OS em ABC.	
+			Tendo selecionado o item em questão na busca do laco de repeticao(Que percorre os itens)			
+			*/
+			if dbseek(xFilial("AB6")+uNkOS+uNkItem)	
+				CONOUT("ENTROU DBSEEK xFiliAB6 + unkOS + uNkItem")
+				CONOUT(xFilial("AB6")+uNkOS+uNkItem)
+				while !eof() .and. xFilial("AB6")+uNkOS+uNkItem==ABC->ABC_FILIAL+ABC->ABC_NUMOS
+					CONOUT("ENTROU WHILE !eof() .and. xFilial(AB6)+uNkOS+uNkItem==ABC->ABC_FILIAL+ABC->ABC_NUMOS")
+					dbselectarea("SB1")
+					dbsetorder(1)
+					if dbseek(xFilial()+ABC->ABC_CODPRO)
+						_local := ""
+						if empty(ABC->ABC_UARMAZ)
+							_local := SB1->B1_LOCPAD
+						else
+							_local := ABC->ABC_UARMAZ
+						endif														
+						cAliasSB2 := GetNextAlias()
+						cQuery := "SELECT B2_QATU FROM "+RetSqlName("SB2")+" SB2 WHERE SB2.B2_FILIAL='LG01' AND SB2.B2_COD='" +ALLTRIM(SB1->B1_COD)+"' AND SB2.B2_LOCAL='"+_local+"' AND SB2.D_E_L_E_T_<>'*'"
+						cQuery := ChangeQuery(cQuery)	 
+						CONOUT(cQuery)
+						dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQuery),cAliasSB2,.T.,.T.)
+						nkQtEstoque := (cAliasSB2)->B2_QATU //Quantidade em estoque do armazem do produto em quatao
+						CONOUT(nkQtEstoque)
+						CONOUT(ABC->ABC_QUANT)
+						//Se o item da OS tem despesa, mas nao existe estoque o suficiente para aquele item, adicione o problema a lista de problemas
+						if nkQtEstoque = nil .OR. nkQtEstoque < ABC->ABC_QUANT								
+							aAdd(uNkProblems, {ALLTRIM(POSICIONE("SB1",1,xFilial("SB1")+SB1->B1_COD,"B1_DESC"))+"("+ALLTRIM(SB1->B1_COD)+")",_local,nkQtEstoque,ABC->ABC_QUANT})
+						endif	
+					endif
+					dbselectarea("ABC")
+					dbskip()						
+				enddo
+				//Se ocorreu falta de estoque para algum produto, printe os itens que causaram o problema e retorne AB7_ITEM para o estado anterior a mudanca
+				if len(uNkProblems)>0							
+					for nki := 1 to len(uNkProblems)
+						unkErrorMsg := unkErrorMsg + u_barraN("PRODUTO:"+ALLTRIM(uNkProblems[nki][1])+"  ARMAZEM:"+ALLTRIM(uNkProblems[nki][2]) + " Qtd.Estoque:"+CVALTOCHAR(uNkProblems[nki][3])+" Qtd.Requisitada:"+CVALTOCHAR(uNkProblems[nki][4]))									
+					next
+					unkErrorMsg := unkErrorMsg + u_barraN("Verifique as despesas nos atendimentos do item dessa ordem de serviço para mais detalhes.")
+					MsgAlert(unkErrorMsg)
+					return tpAntGrv											
+				endif		
+			endif
+			restarea(_aABC)
+		endif					
+		dbselectarea("AB7")
+		dbskip()	
+	ENDIF
+	restArea(_area)	
+return tpDpsGrv                                                   

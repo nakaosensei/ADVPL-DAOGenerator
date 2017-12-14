@@ -1,0 +1,411 @@
+#INCLUDE "rwmake.ch"
+#include "topconn.ch"
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+ฑฑบPrograma  ณLIGFAT13  บ Autor ณ Daniel Gouvea      บ Data ณ  19/10/16   บฑฑ
+ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
+ฑฑบDescricao ณ Listagem de Bonificacoes                                   บฑฑ
+ฑฑบ          ณ                                                            บฑฑ
+ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
+ฑฑบUso       ณ Ligue Telecom                                              บฑฑ
+ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+/*/
+
+User Function LIGFAT13
+	Local cDesc1         := "Este programa tem como objetivo imprimir relatorio "
+	Local cDesc2         := "de acordo com os parametros informados pelo usuario."
+	Local cDesc3         := ""
+	Local cPict          := ""
+	Local titulo       := ""
+	Local nLin         := 80
+	Local Cabec1       := "Vendedor                   #Ven #Ren #Inc Valor Total"
+	Local Cabec2       := "     Atendimento Cliente              Produto                                    Valor Item "
+	Local imprime      := .T.
+	Local aOrd := {}
+	Private lEnd         := .F.
+	Private lAbortPrint  := .F.
+	Private CbTxt        := ""
+	Private limite           := 80
+	Private tamanho          := "M"
+	Private nomeprog         := "LIGFAT13" // Coloque aqui o nome do programa para impressao no cabecalho
+	Private nTipo            := 18
+	Private aReturn          := { "Zebrado", 1, "Administracao", 2, 2, 1, "", 1}
+	Private nLastKey        := 0
+	Private cbtxt      := Space(10)
+	Private cbcont     := 00
+	Private CONTFL     := 01
+	Private m_pag      := 01
+	Private wnrel      := "LIGFAT13" // Coloque aqui o nome do arquivo usado para impressao em disco
+	Private cPerg := "LIGFAT13A "
+	Private cString := "SUA"
+
+	validperg()
+
+	if !pergunte(cPerg,.T.)
+		return
+	endif
+
+	wnrel := SetPrint(cString,NomeProg,cPerg,@titulo,cDesc1,cDesc2,cDesc3,.T.,aOrd,.T.,Tamanho,,.T.)
+
+	If nLastKey == 27
+		Return
+	Endif
+
+	SetDefault(aReturn,cString)
+
+	If nLastKey == 27
+		Return
+	Endif
+
+	nTipo := If(aReturn[4]==1,15,18)
+
+	RptStatus({|| RunReport(Cabec1,Cabec2,Titulo,nLin) },Titulo)
+Return
+
+Static Function RunReport(Cabec1,Cabec2,Titulo,nLin)
+
+	Local nOrdem
+
+	aDados := {}
+	aItens := {}
+
+	if val(MV_PAR03) == 01
+		mescomp1 := "12"
+		anocomp1 := alltrim(str(val(MV_PAR04)-1))
+	elseif val(MV_PAR03) <= 10
+		mescomp1 := "0"+ alltrim(str(val(MV_PAR03)-1))
+		if val(MV_PAR03) < 10
+			MV_PAR03 := "0"+ alltrim(str(val(MV_PAR03)))
+		endif
+		anocomp1 := alltrim(MV_PAR04)
+	else
+		mescomp1 := alltrim(str(val(MV_PAR03)-1))
+		anocomp1 := alltrim(MV_PAR04)
+	endif
+
+	cQuery := " SELECT SUA.*, SUB.*,ADB.*,ADA.ADA_UIDAGA,SA1.A1_MUN,AGA.AGA_MUNDES FROM "+RetSqlName("SUA")+" SUA
+	cQuery += " INNER JOIN "+RetSqlName("SUB")+" SUB ON UA_FILIAL=UB_FILIAL AND UA_NUM=UB_NUM "
+	cQuery += " INNER JOIN "+RetSqlName("ADB")+" ADB ON ADB.ADB_UNUMAT=SUB.UB_NUM AND ADB.ADB_UITATE = SUB.UB_ITEM "
+	cQuery += " INNER JOIN "+RetSqlName("ADA")+" ADA ON ADB.ADB_NUMCTR=ADA.ADA_NUMCTR "
+	cQuery += " INNER JOIN "+RetSqlName("SA1")+" SA1 ON SUA.UA_CLIENTE=SA1.A1_COD "
+	cQuery += " LEFT JOIN "+RetSqlName("AGA")+" AGA ON ADA.ADA_UIDAGA = AGA_CODIGO"
+	cQuery += " WHERE SUA.D_E_L_E_T_=' ' AND SUB.D_E_L_E_T_=' ' AND ADB.D_E_L_E_T_=' ' AND ADA.D_E_L_E_T_=' ' "
+	cQuery += " AND UA_VEND>='"+MV_PAR01+"' AND UA_VEND<='"+MV_PAR02+"'"
+	cQuery += " AND UA_CODLIG = 3"
+	cQuery += " AND UA_FILIAL='"+xFilial("SUA")+"' AND UB_UMESINI<12 AND SUBSTRING(UB_PRODUTO,1,2)<>'02'  "
+	cQuery += " AND UB_PRODUTO<>'990007' " //REMOVIDO ESSE CODIGO A PEDIDO DE MAICON EM 20/12/16, DANIEL
+	cQuery += " AND ADA_UDTLIB>='"+anocomp1+""+mescomp1+"21' AND ADA_UDTLIB<='"+MV_PAR04+""+MV_PAR03+"20' "
+	cQuery += " AND ADA_ULIBER = 'S'"
+	cQuery += " ORDER BY UA_FILIAL,UA_VEND,UA_NUM "
+	TCQUERY cQuery NEW ALIAS "TEMP"
+	dbselectarea("TEMP")
+	if eof()
+		alert("Nao existem dados para esses parametros.")
+		TEMP->(dbclosearea())
+		return
+	endif
+	While !EOF()
+		_vend := TEMP->UA_VEND
+		nRenova := 0
+		nIncrem := 0
+		nVenda  := 0
+		nValor := 0
+		aAtend := {}
+		aOcorren := {}
+		aItens := {}
+		nuRenoT := 0
+		nuRenoA := 0
+		while !eof() .and. _vend == TEMP->UA_VEND
+			if TEMP->UA_CODLIG $ MV_PAR06 //VENDA
+				nPos := aScan(aAtend,{|x| x==TEMP->UA_NUM})
+				if nPos==0
+					nVenda++
+					aadd(aAtend,TEMP->UA_NUM)
+					nPos2 := aScan(aOcorren,{|y| y[1]==TEMP->UA_CODLIG})
+					if nPos2==0
+						aadd(aOcorren,{TEMP->UA_CODLIG,1})
+					else
+						aOcorren[nPos2,2]+=1
+					endif
+				endif
+			endif
+
+			if !empty(alltrim(TEMP->UB_UCTR+TEMP->UB_UITTROC))
+				dbselectarea("ADB")
+				dbsetorder(1)//ADB_FILIAL+ADB_NUMCTR+ADB_ITEM
+				if dbseek(xFilial()+TEMP->UB_UCTR+TEMP->UB_UITTROC)
+					_valor := iif(TEMP->UB_VLRITEM-ADB->ADB_TOTAL>0,TEMP->UB_VLRITEM-ADB->ADB_TOTAL,0)
+				endif
+			else
+				_valor := TEMP->UB_VLRITEM
+			endif
+			nValor += _valor
+			if TEMP->ADA_UIDAGA == '      '
+				aadd(aItens,{TEMP->UA_CODLIG,TEMP->UA_NUM,POSICIONE("SA1",1,XFILIAL("SA1")+TEMP->UA_CLIENTE+TEMP->UA_LOJA,"A1_NOME"),TEMP->UB_PRODUTO,_valor,TEMP->A1_MUN,TEMP->ADB_NUMCTR,TEMP->ADB_UDTINI})
+			else
+				aadd(aItens,{TEMP->UA_CODLIG,TEMP->UA_NUM,POSICIONE("SA1",1,XFILIAL("SA1")+TEMP->UA_CLIENTE+TEMP->UA_LOJA,"A1_NOME"),TEMP->UB_PRODUTO,_valor,TEMP->AGA_MUNDES,TEMP->ADB_NUMCTR,TEMP->ADB_UDTINI})
+			endif
+
+			//----------------------------------------------------------------
+			if nRenova == 0 .AND. nIncrem == 0
+				cQuery := " SELECT SUA.*, SUB.*,ADB.*,ADA.ADA_UIDAGA,SA1.A1_MUN,AGA.AGA_MUNDES FROM "+RetSqlName("SUA")+" SUA
+				cQuery += " INNER JOIN "+RetSqlName("SUB")+" SUB ON UA_FILIAL=UB_FILIAL AND UA_NUM=UB_NUM "
+				cQuery += " INNER JOIN "+RetSqlName("ADB")+" ADB ON ADB.ADB_UNUMAT=SUB.UB_NUM AND ADB.ADB_UITATE = SUB.UB_ITEM "
+				cQuery += " INNER JOIN "+RetSqlName("ADA")+" ADA ON ADB.ADB_NUMCTR=ADA.ADA_NUMCTR "
+				cQuery += " INNER JOIN "+RetSqlName("SA1")+" SA1 ON SUA.UA_CLIENTE=SA1.A1_COD "
+				cQuery += " LEFT JOIN "+RetSqlName("AGA")+" AGA ON ADA.ADA_UIDAGA = AGA_CODIGO"
+				cQuery += " WHERE SUA.D_E_L_E_T_=' ' AND SUB.D_E_L_E_T_=' ' AND ADB.D_E_L_E_T_=' ' AND ADA.D_E_L_E_T_=' ' "
+				cQuery += " AND UA_VEND='"+_vend+"'"
+				cQuery += " AND UA_CODLIG <> 3 AND UA_CODLIG IN (5,6) "
+				cQuery += " AND UA_FILIAL='"+xFilial("SUA")+"' AND UB_UMESINI<12 AND SUBSTRING(UB_PRODUTO,1,2)<>'02'  "
+				cQuery += " AND UB_PRODUTO<>'990007' " //REMOVIDO ESSE CODIGO A PEDIDO DE MAICON EM 20/12/16, DANIEL
+				cQuery += " AND UA_EMISSAO>='"+anocomp1+""+mescomp1+"21' AND UA_EMISSAO<='"+MV_PAR04+""+MV_PAR03+"20' "
+				cQuery += " ORDER BY UA_FILIAL,UA_VEND,UA_NUM "
+				TCQUERY cQuery NEW ALIAS "TEMP1"
+				dbselectarea("TEMP1")
+				While !EOF()
+					if TEMP1->UA_CODLIG $ MV_PAR07 //RENOVACAO/INCREMENTO
+						nPos := aScan(aAtend,{|x| x==TEMP1->UA_NUM})
+						if nPos==0
+							nRenova++
+							aadd(aAtend,TEMP1->UA_NUM)
+							nPos2 := aScan(aOcorren,{|y| y[1]==TEMP1->UA_CODLIG})
+							if nPos2==0
+								aadd(aOcorren,{TEMP1->UA_CODLIG,1})
+							else
+								aOcorren[nPos2,2]+=1
+							endif
+						endif
+					elseif TEMP1->UA_CODLIG $ MV_PAR08 //INCREMENTO
+						nPos := aScan(aAtend,{|x| x==TEMP1->UA_NUM})
+						if nPos==0
+							nIncrem++
+							aadd(aAtend,TEMP1->UA_NUM)
+							nPos2 := aScan(aOcorren,{|y| y[1]==TEMP1->UA_CODLIG})
+							if nPos2==0
+								aadd(aOcorren,{TEMP1->UA_CODLIG,1})
+							else
+								aOcorren[nPos2,2]+=1
+							endif
+						endif
+
+					endif
+					if !empty(alltrim(TEMP1->UB_UCTR+TEMP1->UB_UITTROC))
+						dbselectarea("ADB")
+						dbsetorder(1)//ADB_FILIAL+ADB_NUMCTR+ADB_ITEM
+						if dbseek(xFilial()+TEMP1->UB_UCTR+TEMP1->UB_UITTROC)
+							_valor := iif(TEMP1->UB_VLRITEM-ADB->ADB_TOTAL>0,TEMP1->UB_VLRITEM-ADB->ADB_TOTAL,0)
+							nuRenoT := TEMP1->UB_VLRITEM
+							nuRenoA := ADB->ADB_TOTAL
+						endif
+					else
+						_valor := TEMP1->UB_VLRITEM
+					endif
+					nValor += _valor
+
+					if TEMP->ADA_UIDAGA ==  '      '
+						aadd(aItens,{TEMP1->UA_CODLIG,TEMP1->UA_NUM,POSICIONE("SA1",1,XFILIAL("SA1")+TEMP1->UA_CLIENTE+TEMP1->UA_LOJA,"A1_NOME"),TEMP1->UB_PRODUTO,_valor,TEMP->A1_MUN,TEMP->ADB_NUMCTR,TEMP->ADB_UDTINI,nuRenoT,nuRenoA})
+					else
+						aadd(aItens,{TEMP1->UA_CODLIG,TEMP1->UA_NUM,POSICIONE("SA1",1,XFILIAL("SA1")+TEMP1->UA_CLIENTE+TEMP1->UA_LOJA,"A1_NOME"),TEMP1->UB_PRODUTO,_valor,TEMP->AGA_MUNDES,TEMP->ADB_NUMCTR,TEMP->ADB_UDTINI,nuRenoT,nuRenoA})
+					endif
+					dbselectarea("TEMP1")
+					dbskip()
+				enddo
+				TEMP1->(dbclosearea())
+			endif
+			dbselectarea("TEMP")
+			dbskip()
+		enddo
+		aadd(aDados,{_vend,nVenda,nRenova,nValor,aClone(aItens),aClone(aOcorren),nIncrem})
+	enddo
+	TEMP->(dbclosearea())
+
+	for i:=1 to len(aDados)
+		If nLin > 55 // Salto de Pแgina. Neste caso o formulario tem 55 linhas...
+			Cabec(Titulo,Cabec1,Cabec2,NomeProg,Tamanho,nTipo)
+			nLin := 9
+		Endif
+		//  00000000001111111111222222222233333333334444444444555555555566666666667777777777
+		//  01234567890123456789012345678901234567890123456789012345678901234567890123456789
+		// "Vendedor                   #Ven #Ren #Inc Valor Total"
+		// "     Atendimento Cliente              Produto                                    Valor Item "
+		@nLin,000 PSAY aDados[i,1]+" "+substr(posicione("SA3",1,XFILIAL("SA3")+aDados[i,1],"A3_NOME"),1,20)
+		@nLin,028 PSAY aDados[i,2] PICTURE "999" //VENDAS
+		@nLin,032 PSAY aDados[i,3] PICTURE "999" //RENOVACOES
+		@nLin,036 PSAY aDados[i,7] PICTURE "999" //INCREMENTO
+		@nLin,040 PSAY aDados[i,4] PICTURE PESQPICT("SUB","UB_VLRITEM")
+		nValBonif := 0
+		nValSuper := 0
+		nValGeren := 0
+		dbselectarea("SZ8")
+		dbsetorder(1)
+		if dbseek(xFilial()+aDados[i,1])
+			nAuxQt := aDados[i,2] + abs(aDados[i,3]/2)
+			while !eof() .and. xFilial()+aDados[i,1]==SZ8->Z8_FILIAL+SZ8->Z8_VEND
+				if (nAuxQt>=SZ8->Z8_QTMIN .and. nAuxQt<=SZ8->Z8_QTMAX) .or. (aDados[i,4]>=SZ8->Z8_VALMIN .and. aDados[i,4]<=SZ8->Z8_VALMAX)
+					nValBonif := SZ8->Z8_VALOR
+					nValSuper := SZ8->Z8_VALSUPE
+					nValGeren := SZ8->Z8_VALGER
+				endif
+				dbselectarea("SZ8")
+				dbskip()
+			enddo
+		endif
+		@nLin,055 PSAY nValBonif PICTURE PESQPICT("SZ8","Z8_VALOR")
+		@nLin,071 PSAY nValSuper PICTURE PESQPICT("SZ8","Z8_VALOR")
+		@nLin,087 PSAY nValGeren PICTURE PESQPICT("SZ8","Z8_VALOR")
+		//		nLin++
+		//		@nLin,0 PSAY "TOTAL RENOVAวีES:"
+		//		@nLin,20 PSAY aDados[i,8] PICTURE PESQPICT("SUB","UB_VLRITEM")
+		//		@nLin,40 PSAY "VALOR ANTERIOR:"
+		//		@nLin,60 PSAY aDados[i,9] PICTURE PESQPICT("SUB","UB_VLRITEM")
+		nLin++
+		nLin++
+		dbselectarea("SZA")
+		dbsetorder(1)//ZA_FILIAL+ZA_VEND+ZA_MES+ZA_ANO
+		if dbseek(xFilial()+aDados[i,1]+MV_PAR03+MV_PAR04)
+			reclock("SZA",.F.)
+		else
+			reclock("SZA",.T.)
+			SZA->ZA_FILIAL := XFILIAL("SZA")
+			SZA->ZA_VEND   := aDados[i,1]
+			SZA->ZA_MES    := MV_PAR03
+			SZA->ZA_ANO    := MV_PAR04
+		endif
+		SZA->ZA_VENDAS  := aDados[i,2]
+		SZA->ZA_RENOVAC := aDados[i,3]
+		SZA->ZA_INCREME := aDados[i,7]
+		SZA->ZA_VALOR   := aDados[i,4]
+		SZA->ZA_BONIFIC := nValBonif
+		SZA->ZA_VALSUPE := nValSuper
+		SZA->ZA_VALGER  := nValGeren
+		msunlock()
+		aAuxAtend := aDados[i,6]
+		aAux := aDados[i,5]
+
+		@nLin,00 PSAY "CTR"
+		nLin++
+		for k:=1 to len(aAuxAtend)
+			@nLin,005 PSAY aAuxAtend[k,1]+" "+SUBSTR(POSICIONE("SU9",2,XFILIAL("SU9")+aAuxAtend[k,1],"U9_DESC"),1,20)
+			@nLin,032 PSAY aAuxAtend[k,2]
+			//			nLin++
+			nTot := 0
+			nTotAux := 0
+			nTotVen := 0
+			nTotInc := 0
+			nTotRen := 0
+			for j:=1 to len(aAux)
+				If nLin > 55 // Salto de Pแgina. Neste caso o formulario tem 55 linhas...
+					Cabec(Titulo,Cabec1,Cabec2,NomeProg,Tamanho,nTipo)
+					nLin := 9
+				Endif
+				if aAux[j,1]==aAuxAtend[k,1] .AND. MV_PAR05==2 //ANALITICO
+					nLin++
+					if aAuxAtend[k,1] == '000003'
+						if aAux[j,8] == '        '
+							@nLin,115 PSAY "NรO ATIVO"
+						else
+							@nLin,115 PSAY "ATIVO"
+						endif
+					endif
+					@nLin,000 PSAY aAux[j,7]
+					@nLin,010 PSAY aAux[j,6]
+					@nLin,030 PSAY aAux[j,2]
+					@nLin,037 PSAY SUBSTR(aAux[j,3],1,20)
+					@nLin,058 PSAY aAux[j,4]+SUBSTR(POSICIONE("SB1",1,XFILIAL('SB1')+aAux[j,4],"B1_DESC"),1,30)
+					@nLin,105 PSAY aAux[j,5] PICTURE PESQPICT("SUB","UB_VLRITEM")
+
+					if aAuxAtend[k,1] == '000005'
+						@nLin,117 PSAY aAux[j,10]
+						@nLin,127 PSAY aAux[j,9]
+					endif
+
+					//					nTotAux += aAux[j,5]
+
+				endif
+				if aAux[j,1]==aAuxAtend[k,1] .and. aAux[j,1] == '000005'
+					nuRenoT += aAux[j,9]
+					nuRenoA += aAux[j,10]
+				endif
+				if aAux[j,1] == '000003'
+					nTotVen += aAux[j,5]
+					nTotAux := nTotVen
+				elseif aAux[j,1] == '000005'
+					nTotInc += aAux[j,5]
+					nTotAux := nTotInc
+
+				elseif aAux[j,1] == '000006'
+					nTotRen += aAux[j,5]
+					nTotAux := nTotRen
+				endif
+
+			next j
+			if aAuxAtend[k,1] == '000003'
+				nLin++
+				@nLin,103 PSAY nTotVen PICTURE PESQPICT("SUB","UB_VLRITEM")
+				nLin++
+				@nLin,115 PSAY "ANTERIOR"
+				@nLin,126 PSAY "ATUAL"
+			elseif aAuxAtend[k,1] == '000005'
+				nLin++
+				@nLin,103 PSAY nTotInc PICTURE PESQPICT("SUB","UB_VLRITEM")
+				@nLin,115 PSAY nuRenoA
+				@nLin,125 PSAY nuRenoT
+				nLin++
+			elseif aAuxAtend[k,1] == '000006'
+				nLin++
+				@nLin,103 PSAY nTotRen PICTURE PESQPICT("SUB","UB_VLRITEM")
+
+			endif
+		next k
+
+		nLin := 60
+	next i
+
+	SET DEVICE TO SCREEN
+
+	If aReturn[5]==1
+		dbCommitAll()
+		SET PRINTER TO
+		OurSpool(wnrel)
+	Endif
+
+	MS_FLUSH()
+
+Return
+
+STATIC FUNCTION VALIDPERG
+	_SALIAS := ALIAS()
+	AREGS := {}
+
+	DBSELECTAREA("SX1")
+	DBSETORDER(1)
+	cPerg := PADR(cPerg,10)
+
+	//GRUPO/ORDEM/PERGUNTA/PERSPA/PERENG/VARIAVEL/TIPO/TAMANHO/DECIMAL/PRESEL/GSC/VALID/VAR01/DEF01/DEFSPA1/DEFENG1/CNT01/VAR02/DEF02/DEFSPA2/DEFENG2/CNT02/VAR03/DEF03/DEFSPA3/DEFENG3/CNT03/VAR04/DEF04/DEFSPA4/DEFENG4/CNT04/VAR05/DEF05/DEFSPA5/DEFENG5/CNT05/F3/GRPSXG
+	AADD(AREGS,{cPerg,"01","VENDEDOR DE      ?","","","MV_CH1","C",06,0,0, "G","","MV_PAR01","","","","","","","","","","","","","","","","","","","","","","","","","SA3",""})
+	AADD(AREGS,{cPerg,"02","VENDEDOR ATE     ?","","","MV_CH2","C",06,0,0, "G","","MV_PAR02","","","","","","","","","","","","","","","","","","","","","","","","","SA3",""})
+	AADD(AREGS,{cPerg,"03","MสS ?             ","","","MV_CH3","C",02,0,0, "G","","MV_PAR03","","","","","","","","","","","","","","","","","","","","","","","","","",""})
+	AADD(AREGS,{cPerg,"04","ANO ?             ","","","MV_CH4","C",04,0,0, "G","","MV_PAR04","","","","","","","","","","","","","","","","","","","","","","","","","",""})
+	AADD(AREGS,{cPerg,"05","TIPO             ?","","","MV_CH5","N",01,0,0, "C","","MV_PAR05","Sintetico","","","","","Analitico","","","","","","","","","","","","","","","","","","","",""})
+	AADD(AREGS,{cPerg,"06","CODIGOS VENDA     ","","","MV_CH6","C",80,0,0, "G","","MV_PAR06","","","","","","","","","","","","","","","","","","","","","","","","","",""})
+	AADD(AREGS,{cPerg,"07","CODIGOS RENOVACAO ","","","MV_CH7","C",80,0,0, "G","","MV_PAR07","","","","","","","","","","","","","","","","","","","","","","","","","",""})
+	AADD(AREGS,{cPerg,"08","CODIGOS INCREMENT ","","","MV_CH7","C",80,0,0, "G","","MV_PAR08","","","","","","","","","","","","","","","","","","","","","","","","","",""})
+
+	FOR I:=1 TO LEN(AREGS)
+		IF !DBSEEK(CPERG+AREGS[I,2])
+			RECLOCK("SX1",.T.)
+			FOR J:=1 TO FCOUNT()
+				IF J <= LEN(AREGS[I])
+					FIELDPUT(J,AREGS[I,J])
+				ENDIF
+			NEXT
+			MSUNLOCK()
+		ENDIF
+	NEXT
+	DBSELECTAREA(_SALIAS)
+RETURN

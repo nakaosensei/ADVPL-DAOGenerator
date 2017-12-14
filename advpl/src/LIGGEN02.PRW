@@ -1,0 +1,379 @@
+#INCLUDE "PROTHEUS.CH"
+#INCLUDE "RWMAKE.CH"
+#INCLUDE "FILEIO.CH"
+#INCLUDE "TOPCONN.CH"
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPROGRAMA  ³LIGGEN02  ºAUTOR  ³CASSIUS MARTINS     º DATA ³  30/04/14   º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDESC.     ³IMPORTA CONTRATOS							      			  º±±
+±±º          ³                                                            º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUSO       ³ LIGUE                                                      º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+USER FUNCTION LIGGEN02()
+*********************************
+PRIVATE _CFILE 	:= " "
+PRIVATE _AVETOR := {}
+PRIVATE _ADADOS := {}
+PRIVATE _CONT	:= 0
+PRIVATE _NIMPOK := 0
+PRIVATE _NIMPNO := 0
+
+_CFILE := CGETFILE("*.CSV|*.CSV","ARQ.CSV",1,,.F.,GETF_LOCALHARD+GETF_LOCALFLOPPY,.F.)
+
+IF EMPTY(_CFILE) .OR. !FILE(_CFILE)
+	RETURN
+ENDIF
+
+PROCESSA({|| GEN02A() },"CARREGANDO ARQUIVO...")
+//PROCESSA({|| GEN02C() },"GRAVANDO CONTRATOS...") 
+PROCESSA({|| GEN02D() },"ATUALIZANDO STATUS...")
+
+RETURN             
+
+STATIC FUNCTION GEN02D()          
+LOCAL PNUMCOB		:= 12
+LOCAL PATIVO        := 16 
+
+for i:=1 to len(_aDados)
+	cQuery := " SELECT ADA_NUMCTR FROM "+RetSqlName("ADA")+" WHERE D_E_L_E_T_=' ' "
+	cQuery += " AND ADA_UNRCOB='"+alltrim(_aDados[i,PNUMCOB])+"' "
+	TCQUERY cQuery NEW ALIAS "TEMP"
+	dbselectarea("TEMP")
+	if !eof()
+		dbselectarea("ADA")
+		dbsetorder(1)
+		if dbseek(xFilial()+TEMP->ADA_NUMCTR)
+			reclock("ADA",.f.)
+			ADA->ADA_ULIBER := _aDados[i,PATIVO]
+			msunlock()
+		endif		
+	endif	 
+	TEMP->(dbclosearea())
+next
+
+return
+
+
+STATIC FUNCTION GEN02A() //LE ARQUIVO
+*********************************
+PRIVATE OLETXT
+PRIVATE NTAMFILE, NTAMLIN, CBUFFER, NBTLIDOS
+PRIVATE NHDL
+PRIVATE CEOL    := CHR(13)+CHR(10)
+
+NHDL := FOPEN(_CFILE,68)
+
+IF NHDL == -1
+	MSGALERT("O ARQUIVO "+_CFILE+" NAO PODE SER ABERTO! VERIFIQUE OS PARAMETROS.","ATENCAO!")
+	RETURN
+ENDIF
+
+IF FILE(_CFILE)
+	FT_FUSE(_CFILE)
+	FT_FGOTOP()
+	FT_FSKIP() //PULA CABECALHO
+	_ADADOS := {}
+	_ALINHA := {}
+	_CONT   := 0
+	WHILE !FT_FEOF() //.AND. _CONT<150
+		CLINHA := FT_FREADLN()
+		_AUXINI := 1
+		_AUXFIM := 1
+		_CTEXTO	:= " "
+		WHILE _AUXFIM<=LEN(CLINHA)
+			IF SUBSTR(CLINHA,_AUXFIM,1) == ";"
+				IF ALLTRIM(SUBSTR(CLINHA,_AUXINI,_AUXFIM-_AUXINI)) != ""
+					AADD(_ALINHA,ALLTRIM(UPPER(SUBSTR(CLINHA,_AUXINI,_AUXFIM-_AUXINI))))
+				ELSE
+					AADD(_ALINHA,SPACE(1))
+				ENDIF
+				_AUXFIM++
+				_AUXINI := _AUXFIM
+			ELSE
+				_AUXFIM++
+			ENDIF
+		ENDDO
+		_CONT++
+		AADD(_ALINHA,SUBSTR(CLINHA,_AUXINI,_AUXFIM-_AUXINI))
+		
+		FOR _I:=1 TO LEN(_ALINHA) //RETIRA ACENTOS
+			_ALINHA[_I] := GEN02B(_ALINHA[_I])
+		NEXT _I
+		
+		AADD(_ADADOS,_ALINHA)
+		
+		_ALINHA := {}
+		FT_FSKIP()
+	ENDDO
+	FT_FUSE()
+ELSE
+	MSGINFO("ARQUIVO NAO ENCONTRADO. FAVOR VERIFICAR OS PARAMETROS.")
+ENDIF
+
+RETURN
+
+
+STATIC FUNCTION GEN02B(CSTRING) //RETIRA ACENTOS
+*********************************
+LOCAL CCHAR  := ""
+LOCAL NX     := 0
+LOCAL NY     := 0
+LOCAL CVOGAL := "AEIOUAEIOU"
+LOCAL CAGUDO := "áéíóú"+"ÁÉÍÓÚ"
+LOCAL CCIRCU := "âêîôû"+"ÂÊÎÔÛ"
+LOCAL CTREMA := "äëïöü"+"ÄËÏÖÜ"
+LOCAL CCRASE := "àèìòù"+"ÀÈÌÒÙ"
+LOCAL CTIO   := "ãõ"
+LOCAL CCECID := "çÇ"
+LOCAL CTRAT	 := " "
+
+FOR NX:= 1 TO LEN(CSTRING)
+	
+	CCHAR:=SUBSTR(CSTRING, NX, 1)
+	
+	IF CCHAR$CAGUDO+CCIRCU+CTREMA+CCECID+CTIO+CCRASE
+		
+		NY:= AT(CCHAR,CAGUDO)
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR(CVOGAL,NY,1))
+		ENDIF
+		
+		NY:= AT(CCHAR,CCIRCU)
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR(CVOGAL,NY,1))
+		ENDIF
+		
+		NY:= AT(CCHAR,CTREMA)
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR(CVOGAL,NY,1))
+		ENDIF
+		
+		NY:= AT(CCHAR,CCRASE)
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR(CVOGAL,NY,1))
+		ENDIF
+		
+		NY:= AT(CCHAR,CTIO)
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR("AO",NY,1))
+		ENDIF
+		
+		NY:= AT(CCHAR,CCECID)
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR("CC",NY,1))
+		ENDIF
+		
+	ENDIF
+	
+NEXT
+
+//TRATAMENTO DE CARACTERES ESPECIAIS
+FOR NX:=1 TO LEN(CSTRING)
+	
+	CCHAR:=SUBSTR(CSTRING, NX, 1)
+	
+	IF ASC(CCHAR) < 32 .OR. ASC(CCHAR) > 123 .OR. CCHAR $ '&'
+		
+		DO CASE
+			CASE ASC(CCHAR) == 38
+				CCHAR := "E"
+			CASE ASC(CCHAR) == 128
+				CCHAR := "A"
+			CASE ASC(CCHAR) == 181
+				CCHAR := "A"
+			CASE ASC(CCHAR) == 229
+				CCHAR := "O"
+			CASE ASC(CCHAR) == 144
+				CCHAR := "E"
+			CASE ASC(CCHAR) == 133
+				CCHAR := "A"
+			CASE ASC(CCHAR) == 248
+				CCHAR := ""
+			CASE ASC(CCHAR) == 152
+				CCHAR := "Y"
+			CASE ASC(CCHAR) == 208
+				CCHAR := "O"
+			CASE ASC(CCHAR) == 182
+				CCHAR := "A"
+			CASE ASC(CCHAR) == 167
+				CCHAR := ""
+			CASE ASC(CCHAR) == 166
+				CCHAR := ""
+			CASE ASC(CCHAR) == 126
+				CCHAR := ""
+			CASE ASC(CCHAR) == 221
+				CCHAR := ":"
+			CASE ASC(CCHAR) == 155
+				CCHAR := ""
+			CASE ASC(CCHAR) == 154
+				CCHAR := "U"
+				
+		ENDCASE
+		CSTRING := SUBSTR(CSTRING,1,NX-1)+CCHAR+SUBSTR(CSTRING,NX+1,LEN(CSTRING)-NX)
+		
+	ENDIF
+	
+NEXT NX
+
+
+
+FOR NX:=1 TO LEN(CSTRING)
+	
+	CCHAR:=SUBSTR(CSTRING, NX, 1)
+	
+	IF ASC(CCHAR) < 32 .OR. ASC(CCHAR) > 123 .OR. CCHAR $ '&'
+		
+		IF STRTRAN(CTRAT, "("+ALLTRIM(STR(ASC(CCHAR)))+"-"+CCHAR+")  ") == CTRAT
+			CTRAT += "("+ALLTRIM(STR(ASC(CCHAR)))+"-"+CCHAR+")  "
+		ENDIF
+		//CSTRING:=STRTRAN(CSTRING,CCHAR,"?")
+	ENDIF
+	
+NEXT NX
+
+CSTRING := _NOTAGS(CSTRING)
+
+RETURN CSTRING
+
+
+
+STATIC FUNCTION GEN02C() //IMPORTA DADOS
+***********************************
+LOCAL PCONTR   	    := 2
+LOCAL PEMISSAO      := 5
+LOCAL PCNPJ		    := 3
+LOCAL PPRODUTO      := 9
+LOCAL PQUANT	    := 14
+LOCAL PVUNIT        := 15
+LOCAL PDTINI        := 6
+LOCAL PDTFIM        := 7
+LOCAL PNUMCOB		:= 12
+LOCAL PATIVO        := 16
+LOCAL PVEND1        := 17
+LOCAL PVEND2        := 18
+
+ASORT(_ADADOS,,,{|X,Y| X[PCNPJ]+X[PNUMCOB]<Y[PCNPJ]+Y[PNUMCOB]})
+
+_CCTRANT := " "
+_CCLIANT := " "
+_NITEM	 := 1
+I := 1
+PROCREGUA(LEN(_ADADOS))
+WHILE I<=LEN(_aDados)
+	_numCob := alltrim(_aDados[i,PNUMCOB])
+	
+	//TRATA DADOS
+	_CCGC := STRTRAN(_ADADOS[I,PCNPJ],".","")
+	_CCGC := STRTRAN(_CCGC,"/","")
+	_CCGC := STRTRAN(_CCGC,"-","")
+	
+	_CCLIANT := ""
+	
+	while I<=LEN(_aDados) .and.  _numCob+_CCGC == alltrim(_aDados[i,PNUMCOB])+_CCGC
+		INCPROC("AGUARDE...")
+		
+		
+		
+		_ADADOS[I,PEMISSAO] := STRTRAN(_ADADOS[I,PEMISSAO],"-","")
+		_DEMI := STOD(_ADADOS[I,PEMISSAO])
+		
+		_ADADOS[I,PDTINI] := STRTRAN(_ADADOS[I,PDTINI],"-","")
+		_DINI := STOD(_ADADOS[I,PDTINI])
+		
+		_ADADOS[I,PDTFIM] := STRTRAN(_ADADOS[I,PDTFIM],"-","")
+		_DFIM := STOD(_ADADOS[I,PDTFIM])
+		
+		_ADADOS[I,PQUANT] := STRTRAN(_ADADOS[I,PQUANT],".","")
+		_ADADOS[I,PQUANT] := STRTRAN(_ADADOS[I,PQUANT],",",".")
+		
+		_ADADOS[I,PVUNIT] := STRTRAN(_ADADOS[I,PVUNIT],".","")
+		_ADADOS[I,PVUNIT] := STRTRAN(_ADADOS[I,PVUNIT],",",".")
+		
+		DBSELECTAREA("SA1")
+		DBSETORDER(3)
+		IF DBSEEK(XFILIAL("SA1")+_CCGC)			
+			DBSELECTAREA("SB1")
+			DBSETORDER(12)
+			IF DBSEEK(XFILIAL("SB1")+_ADADOS[I,PPRODUTO])				
+				IF _CCLIANT!=_CCGC
+					_CCLIANT := _CCGC					
+					_CCTRATU := GETSX8NUM("ADA","ADA_NUMCTR")
+					CONFIRMSX8()					
+					_CCTRANT := _ADADOS[I,PCONTR]
+					_NITEM	 := 1					
+					DBSELECTAREA("ADA")
+					RECLOCK("ADA",.T.)
+					ADA->ADA_FILIAL := XFILIAL("ADA")
+					ADA->ADA_NUMCTR	:= _CCTRATU
+					ADA->ADA_EMISSA	:= _DEMI
+					ADA->ADA_CODCLI	:= SA1->A1_COD
+					ADA->ADA_LOJCLI	:= SA1->A1_LOJA
+					ADA->ADA_CONDPG	:= "115"
+					ADA->ADA_MOEDA	:= 1
+					ADA->ADA_TIPLIB	:= "1"
+					ADA->ADA_STATUS	:= "B"
+					ADA->ADA_UNRCOB	:= _numCob//ALLTRIM(_ADADOS[I,PNUMCOB])
+					ADA->ADA_UCTANT	:= _CCTRANT
+					ADA->ADA_VEND1  := ALLTRIM(_ADADOS[I,PVEND1])
+					ADA->ADA_VEND2  := ALLTRIM(_ADADOS[I,PVEND2])
+					MSUNLOCK()					
+					DBSELECTAREA("ADB")
+					RECLOCK("ADB",.T.)
+					ADB->ADB_FILIAL	:= XFILIAL("ADB")
+					ADB->ADB_NUMCTR	:= _CCTRATU
+					ADB->ADB_ITEM	:= STRZERO(_NITEM,2)
+					ADB->ADB_CODPRO	:= SB1->B1_COD
+					ADB->ADB_DESPRO	:= SB1->B1_DESC
+					ADB->ADB_UM		:= SB1->B1_UM
+					ADB->ADB_QUANT	:= VAL(_ADADOS[I,PQUANT])
+					ADB->ADB_PRCVEN	:= VAL(_ADADOS[I,PVUNIT])
+					ADB->ADB_TOTAL	:= ROUND(VAL(_ADADOS[I,PQUANT])*VAL(_ADADOS[I,PVUNIT]),2)
+					ADB->ADB_TES	:= "501"
+					ADB->ADB_UDTINI	:= _DINI
+					ADB->ADB_UDTFIM	:= _DFIM
+					ADB->ADB_LOCAL	:= "01"
+					ADB->ADB_CODCLI	:= SA1->A1_COD
+					ADB->ADB_LOJCLI	:= SA1->A1_LOJA
+					MSUNLOCK()
+				ELSE
+					_NITEM++					
+					DBSELECTAREA("ADB")
+					RECLOCK("ADB",.T.)
+					ADB->ADB_FILIAL	:= XFILIAL("ADB")
+					ADB->ADB_NUMCTR	:= _CCTRATU
+					ADB->ADB_ITEM	:= STRZERO(_NITEM,2)
+					ADB->ADB_CODPRO	:= SB1->B1_COD
+					ADB->ADB_DESPRO	:= SB1->B1_DESC
+					ADB->ADB_UM		:= SB1->B1_UM
+					ADB->ADB_QUANT	:= VAL(_ADADOS[I,PQUANT])
+					ADB->ADB_PRCVEN	:= VAL(_ADADOS[I,PVUNIT])
+					ADB->ADB_TOTAL	:= ROUND(VAL(_ADADOS[I,PQUANT])*VAL(_ADADOS[I,PVUNIT]),2)
+					ADB->ADB_TES	:= "501"
+					ADB->ADB_UDTINI	:= _DINI
+					ADB->ADB_UDTFIM	:= _DFIM
+					ADB->ADB_LOCAL	:= "01"
+					ADB->ADB_CODCLI	:= SA1->A1_COD
+					ADB->ADB_LOJCLI	:= SA1->A1_LOJA
+					MSUNLOCK()	
+				ENDIF				
+			ELSE
+//				ALERT("NAO ACHOU PRODUTO "+_ADADOS[I,PPRODUTO])
+			ENDIF //IF DO SB1		
+		ENDIF //IF DO SA1
+		
+		I++
+	enddo //enddo do 2o while
+	
+enddo //enddo do 1o while
+
+MSGALERT("CONTRATOS IMPORTADOS")
+
+RETURN

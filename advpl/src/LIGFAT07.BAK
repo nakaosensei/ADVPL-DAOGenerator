@@ -1,0 +1,7 @@
+#Include 'Protheus.ch'
+#Include "RwMake.ch"
+
+User Function LIGFAT07()
+		AxCadastro( "SZ5", "Cadastro de cobranças do Faturamento")
+Return
+

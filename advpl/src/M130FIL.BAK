@@ -1,0 +1,21 @@
+#INCLUDE "PROTHEUS.CH"
+#INCLUDE "RWMAKE.CH" 
+
+USER Function M130FIL()                 
+Local cStatus := " "
+Local cFiltro := ""
+aStatus := {"L","B","R"," ","Todos"}
+
+	DEFINE MSDIALOG oDlg TITLE "Status da Solicitação" FROM 000, 000  TO 190, 400 COLORS 0, 16777215 PIXEL
+		@ 008, 004 SAY oSay1 PROMPT "Status:" SIZE 70, 014 OF oDlg COLORS 0, 16777215 PIXEL
+		@ 024, 005 MSCOMBOBOX oCombo VAR cStatus ITEMS aStatus SIZE 140, 010 OF oDlg COLORS 0, 16777215 PIXEL
+		@ 062, 151 BUTTON oButton2 PROMPT "OK" action Close(oDlg) SIZE 037, 012 OF oDlg PIXEL
+	ACTIVATE MSDIALOG oDlg			
+                    
+
+                    
+if cStatus<>"Todos"
+	cFiltro := " C1_APROV = '"+cStatus+"' "
+endif
+
+Return cFiltro

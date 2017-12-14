@@ -1,0 +1,54 @@
+#Include 'Protheus.ch'
+
+User Function AT300GRV()	
+Local _area := getarea()
+Local _aAB2 := AB2->(getarea())
+Local _cNumOS := "" 
+
+dbselectarea("AB2")
+dbsetorder(1) //AB2_FILIAL + AB2_NRCHAM + AB2_ITEM + AB2_CODPRO + AB2_NUMSER
+if dbseek(xFilial()+AB1->AB1_NRCHAM)
+
+	IF AB2->AB2_TIPO == '3'		
+		
+		U_LIGTEC10(AB2->AB2_NUMOS)
+		
+		while !eof() .AND. xFilial()+AB2->AB2_NRCHAM == xFilial()+AB1->AB1_NRCHAM
+ 
+			dbselectarea("AB7")
+			dbsetorder(1)
+			if dbseek(xFilial()+AB2->AB2_NUMOS+AB2->AB2_ITEM)
+				_memo := MSMM(AB2->AB2_MEMO)
+				_nTam := TamSX3("AB7_MEMO2")
+				_nTam1 := _nTam[1]
+			
+				MSMM(AB7->AB7_MEMO1,_nTam1,,_memo,1,,,"AB7","AB7_MEMO1")
+			endif		
+			_cNumOS := AB2->AB2_NUMOS
+			
+			dbselectarea("AB2")
+			dbskip() 
+		enddo
+		
+		lImpos := MSGYESNO( "Deseja imprimir O.S? " )
+		IF lImpos = .T.
+			U_LIGTEC03()
+		ENDIF
+		
+		dbselectarea("AB6")
+		dbsetorder(1)
+		if dbseek(xFilial()+ _cNumOS)
+			email := POSICIONE("AA1",1,XFILIAL("AA1")+AB6->AB6_UCODAT,"AA1_EMAIL") 
+			IF !EMPTY(email)
+				U_TEC02F(AB6->AB6_NUMOS,email)
+			ENDIF	
+		endif	
+	ENDIF
+	
+endif
+
+restarea(_aAB2)
+restarea(_area)	
+Return
+
+

@@ -1,0 +1,252 @@
+#INCLUDE "RWMAKE.CH"
+#INCLUDE "Topconn.ch"
+#INCLUDE "FWPrintSetup.ch"
+#include "ap5mail.ch"
+#INCLUDE "RPTDEF.CH"
+
+/*
+DESCRIÇÃO: FUNÇÃO PRA IMPRIMIR AS NF MODELOS 21 E 22
+AUTOR:     DANIEL GOUVEA
+DATA:      29/05/2014
+CLIENTE:   LIGUE TELECOM
+*/
+
+USER FUNCTION LIGFAT03(_cFilial,_cDoc,_cSerie,_cCliente,_cLoja,_cPath,_lView)
+Private _CF := ""
+Private _desccf := ""
+Private _venc := ""
+Private _par1 := _cFilial
+Private _par2 := _cDoc
+Private _par3 := _cSerie
+Private _par4 := _cCliente
+Private _par5 := _cLoja
+Private	_nBaseICM := 0
+Private	_nValICM  := 0
+Private	_nValTot  := 0
+Private _aICM     := {}
+Private _caminho := _CPATH 
+Private _view    := _LVIEW
+
+if type('_par1')<>"C"
+	_cFilial  := SF2->F2_FILIAL
+	_cDoc	  := SF2->F2_DOC
+	_cSerie   := SF2->F2_SERIE
+	_cCliente := SF2->F2_CLIENTE
+	_cLoja    := SF2->F2_LOJA
+endif
+
+dbselectarea("SF2")
+dbsetorder(1)//F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA+F2_FORMUL+F2_TIPO
+if dbseek(_cFilial+_cDoc+_cSerie+_cCliente+_cLoja)
+	//if !(ALLTRIM(SF2->F2_SERIE) $ "21/22") //TRATAMENTO PRA NF 21 OU 22. A PARTIR DE AGORA A NF 21 VAI INICIAR COM C, E A 22 INICIAR COM D
+	if !("C" $ SF2->F2_SERIE .OR. "D" $ SF2->F2_SERIE .OR. "21" $ SF2->F2_SERIE .OR. "22" $ SF2->F2_SERIE)
+		ALERT("SOMENTE PARA NF SERIE C(21) OU D(22)")
+	else
+		
+		//VAI ENCONTRAR O _VENC
+		_CQUERY := " SELECT E1.E1_VENCTO "
+		_CQUERY += " FROM "+RETSQLNAME("SE1")+" E1 "
+		_CQUERY += " WHERE ((E1.E1_UFILNF1='"+SF2->F2_FILIAL+"' AND E1.E1_USERNF1='"+SF2->F2_SERIE+"' AND E1.E1_UNUMNF1='"+SF2->F2_DOC+"') "
+		_CQUERY += " OR (E1.E1_UFILNF2='"+SF2->F2_FILIAL+"' AND E1.E1_USERNF2='"+SF2->F2_SERIE+"' AND E1.E1_UNUMNF2='"+SF2->F2_DOC+"') " 
+		_CQUERY += " OR (E1.E1_UFILNF3='"+SF2->F2_FILIAL+"' AND E1.E1_USERNF3='"+SF2->F2_SERIE+"' AND E1.E1_UNUMNF3='"+SF2->F2_DOC+"') " 
+		_CQUERY += " OR (E1.E1_UFILNF4='"+SF2->F2_FILIAL+"' AND E1.E1_USERNF4='"+SF2->F2_SERIE+"' AND E1.E1_UNUMNF4='"+SF2->F2_DOC+"') "
+		_CQUERY += " OR (E1.E1_UFILNF5='"+SF2->F2_FILIAL+"' AND E1.E1_USERNF5='"+SF2->F2_SERIE+"' AND E1.E1_UNUMNF5='"+SF2->F2_DOC+"')) "
+		_CQUERY += " AND E1.D_E_L_E_T_=' ' "  
+		TCQUERY _CQUERY NEW ALIAS "TEMP"
+		dbselectarea("TEMP")
+		if !eof()
+//			alert("Houve um problema na geração do boleto aglutinado. A nota não poderá ser impressa.")
+//			TEMP->(dbclosearea())
+//			return
+			
+			_venc := TEMP->E1_VENCTO
+		endif
+
+		TEMP->(dbclosearea())
+		
+		_CF     := "" 
+		_descCF := ""
+		dbselectarea("SD2")
+		dbsetorder(3)//D2_FILIAL+D2_DOC+D2_SERIE+D2_CLIENTE+D2_LOJA+D2_COD+D2_ITEM
+		if dbseek(xFilial()+SF2->F2_DOC+SF2->F2_SERIE+SF2->F2_CLIENTE+SF2->F2_LOJA)
+			while !eof() .and. xFilial()+SF2->F2_DOC+SF2->F2_SERIE+SF2->F2_CLIENTE+SF2->F2_LOJA==;
+				SD2->D2_FILIAL+SD2->D2_DOC+SD2->D2_SERIE+SD2->D2_CLIENTE+SD2->D2_LOJA
+			   //	if !(alltrim(SD2->D2_CF) $ _cf)								
+					if empty(_CF)
+						_CF += ALLTRIM(SD2->D2_CF)
+				   		_descCF += ALLTRIM(POSICIONE("SX5",1,XFILIAL("SX5")+"13"+ALLTRIM(SD2->D2_CF),"X5_DESCRI"))  
+					endif
+					
+					_nBaseICM += SD2->D2_BASEICM
+					_nValICM  += SD2->D2_VALICM
+					_nValTot  += SD2->D2_TOTAL
+					aadd(_aICM,{ALLTRIM(SD2->D2_COD),POSICIONE("SB1",1,XFILIAL("SB1")+SD2->D2_COD,"B1_DESC"),TRANSFORM(SD2->D2_PICM,PESQPICT("SD2","D2_PICM")),;
+							TRANSFORM(SD2->D2_TOTAL,PESQPICT("SD2","D2_TOTAL"))})
+			  //	endif 
+				dbselectarea("SD2")
+				dbskip()
+			enddo
+		endif
+		dbselectarea("SA1")
+		dbsetorder(1)
+		if dbseek(xFilial()+SF2->F2_CLIENTE+SF2->F2_LOJA)
+			dbselectarea("SF3")
+			dbsetorder(4)//F3_FILIAL+F3_CLIEFOR+F3_LOJA+F3_NFISCAL+F3_SERIE
+			if dbseek(xFilial()+SF2->F2_CLIENTE+SF2->F2_LOJA+SF2->F2_DOC+SF2->F2_SERIE)
+				LIGFAT03()
+			endif
+		endif
+	endif
+endif
+
+return
+
+USER FUNCTION TSTLF03()
+U_LIGFAT03("LG01","000000034","21 ","047510750","001")
+RETURN
+
+STATIC FUNCTION LIGFAT03()
+Local oFont9  := TFont():New("Arial", ,9 , ,.F., , , , , ,.F.,.F.)
+Local oFont9b := TFont():New("Arial", ,9 , ,.T., , , , , ,.F.,.F.)
+Local oFont10 := TFont():New("Arial", ,10, ,.F., , , , , ,.F.,.F.)
+Local oFont10b:= TFont():New("Arial", ,10, ,.T., , , , , ,.F.,.F.)
+Local oFont11 := TFont():New("Arial", ,11, ,.F., , , , , ,.F.,.F.)
+Local oFont11b:= TFont():New("Arial", ,11, ,.T., , , , , ,.F.,.F.)
+Local oFont12 := TFont():New("Arial", ,12, ,.F., , , , , ,.F.,.F.)
+Local oFont12b:= TFont():New("Arial", ,12, ,.T., , , , , ,.F.,.F.)
+Local oFont14 := TFont():New("Arial", ,14, ,.F., , , , , ,.F.,.F.)
+Local oFont14b:= TFont():New("Arial", ,14, ,.T., , , , , ,.F.,.F.)   
+
+IF TYPE("_caminho")=="U"                   
+	_caminho := gettemppath()
+ENDIF
+
+IF TYPE("_view")=="U"
+	_view := .T.
+ENDIF
+
+_nome := ALLTRIM(SF2->F2_FILIAL+"_"+CVALTOCHAR(VAL(SF2->F2_DOC))+"_"+SF2->F2_SERIE)+"_"+strtran(time(),":","")
+
+oPrint:= FWMSPrinter():New(_nome,6,.t.,_caminho,.T.,,,,,,,_view)
+	
+oPrint:SetPortrait()	// ou SetLandscape()
+oPrint:SetMargin(1,1,1,1)
+oPrint:cPathPDF := _caminho
+
+oPrint:StartPage()
+//PRIMEIRAMENTE VAI IMPRIMIR OS CABEÇALHOS
+oPrint:Box( 90, 90, 2910, 2310)
+oPrint:SayBitmap(100,100,"logo.bmp",500,138)
+
+oPrint:say(140,1000,"NOTA FISCAL DE SERVIÇO DE TELECOMUNICAÇÕES",oFont14b)     
+
+IF ("D" $ SF2->F2_SERIE)
+	oPrint:say(175,1300,"MODELO 22 / VIA ÚNICA",oFont10)
+ENDIF  
+IF ("C" $ SF2->F2_SERIE)
+	oPrint:say(175,1300,"MODELO 21 / VIA ÚNICA",oFont10)
+ENDIF 
+ 
+_nSerie := val(SUBSTR(SF2->F2_SERIE, 2, 2))
+oPrint:say(200,1300, "SERIE " + cValToChar(_nSerie) ,oFont10)
+
+oPrint:say(240,1200,"Atendimento ao Cliente: (44) 3523-8565",oFont11b)	
+oPrint:line(260,440,260,2290,2)
+
+oPrint:say(290,0440,"Data de Emissão: ",oFont10b)
+oPrint:say(320,0440,"N da Nota Fiscal: ",oFont10b)
+
+IF ! EMPTY(_venc)
+	oPrint:say(350,0440,"Vencimento: ",oFont10b)	
+ENDIF
+
+oPrint:say(380,0440,"CFOP: ",oFont10b)
+oPrint:say(410,0440,_desccf,oFont9)	
+oPrint:say(290,0700,DTOC(SF2->F2_EMISSAO),oFont10)
+oPrint:say(320,0700,SF2->F2_DOC,oFont10)
+
+IF ! EMPTY(_venc)
+	oPrint:say(350,0700,dtoc(stod(_venc)),oFont10)	
+ENDIF
+
+oPrint:say(380,0700,_CF,oFont10)
+
+oPrint:say(290,1500,"LIGUE TELECOMUNICAÇÕES LTDA",oFont10b)
+oPrint:say(320,1500,"Rua Mato Grosso, 1780",oFont10)
+oPrint:say(350,1500,"87300-400 Campo Mourão PR Brasil",oFont10)	
+oPrint:say(380,1500,"CNPJ: 10.442.435/0001-40 I.E: 9046098894",oFont10)
+oPrint:say(410,1500,"Tel +55 44 3523-8565",oFont10)	
+	
+oPrint:line(430,100,430,2290,3)
+
+oPrint:say(460,0120,"CLIENTE: ",oFont10b)
+oPrint:say(460,0300,ALLTRIM(SA1->A1_NOME),oFont10)
+oPrint:say(500,0120,"ENDEREÇO: ",oFont10b)
+oPrint:say(500,0300,ALLTRIM(SA1->A1_END),oFont10)
+oPrint:say(540,0120,"BAIRRO: ",oFont10b)
+oPrint:say(540,0300,ALLTRIM(SA1->A1_BAIRRO),oFont10)
+oPrint:say(580,0120,"MUNICIPIO: ",oFont10b)
+oPrint:say(580,0300,ALLTRIM(SA1->A1_MUN),oFont10)
+
+oPrint:say(460,1500,"CNPJ/CPF: ",oFont10b)
+IF SA1->A1_PESSOA=="F"
+	oPrint:say(460,1700,TRANSFORM(SA1->A1_CGC,"@R 999.999.999-99"),oFont10)
+ELSE
+	oPrint:say(460,1700,TRANSFORM(SA1->A1_CGC,"@R 99.999.999/9999-99"),oFont10)
+ENDIF
+oPrint:say(500,1500,"INSC. EST.: ",oFont10b)
+oPrint:say(500,1700,SA1->A1_INSCR,oFont10b)
+oPrint:say(540,1500,"CEP: ",oFont10b)
+oPrint:say(540,1700,TRANSFORM(SA1->A1_CEP,PESQPICT("SA1","A1_CEP")),oFont10)
+oPrint:say(580,1500,"ESTADO: ",oFont10b)
+oPrint:say(580,1700,SA1->A1_EST,oFont10)
+
+//box do resumo dos serviços
+oPrint:Box(600,0100, 2670, 2290)
+oPrint:say(630,0120,"RESUMO DOS SERVIÇOS",oFont10b)
+oPrint:say(630,1600,"ALIQ. ICMS",oFont10b)
+oPrint:say(630,1900,"VALOR (R$)",oFont10b)
+oPrint:line(650,100,650,2290)
+
+nLin := 690
+for i:=1 to len(_aICM) //ITENS
+	oPrint:say(nLin,0120,_aICM[i,1],oFont10)
+	oPrint:say(nLin,0320,_aICM[i,2],oFont10)
+	oPrint:say(nLin,1600,_aICM[i,3],oFont10)
+	oPrint:say(nLin,1900,_aICM[i,4],oFont10)
+	nLin += 35
+next           
+
+//Mensagem para nota 21/10/14	- Robson
+dbselectarea("SC5")
+dbsetorder(6)//C5_FILIAL+C5_NOTA+C5_SERIE  
+if dbseek(xFilial()+SF2->F2_DOC+SF2->F2_SERIE) 
+	IF !EMPTY(SC5->C5_MENNOTA)
+   		oPrint:say(2520,0120,SC5->C5_MENNOTA,oFont10)	
+	ENDIF
+endif
+
+oPrint:Line(2570,0100, 2570, 2290)
+oPrint:say(2600,0120,"BASE DE CÁLCULO DO ICMS",oFont11b)
+oPrint:say(2600,1120,"VALOR DO ICMS",oFont11b)
+oPrint:say(2600,1680,"VALOR TOTAL",oFont11b)
+
+oPrint:say(2630,460,ALLTRIM(TRANSFORM(_nBaseICM,PESQPICT("SD2","D2_BASEICM"))),oFont11)
+oPrint:say(2630,1280,ALLTRIM(TRANSFORM(_nValICM,PESQPICT("SD2","D2_VALICM"))),oFont11)
+oPrint:say(2630,1810,ALLTRIM(TRANSFORM(_nValTot,PESQPICT("SD2","D2_TOTAL"))),oFont11)
+
+oPrint:Box(2680,0100, 2760, 2290)
+
+_cFisco := SUBSTR(SF3->F3_MDCAT79, 0, 4) + "."+ SUBSTR(SF3->F3_MDCAT79, 5, 4) + "."+SUBSTR(SF3->F3_MDCAT79, 9, 4) + "."+SUBSTR(SF3->F3_MDCAT79, 13, 4) + "."+SUBSTR(SF3->F3_MDCAT79, 17, 4) + "."+ SUBSTR(SF3->F3_MDCAT79, 21, 4) + "."+ SUBSTR(SF3->F3_MDCAT79, 25, 4) + "."+ SUBSTR(SF3->F3_MDCAT79, 29, 4)
+oPrint:say(2730,0120,"RESERVADO AO FISCO: "+ _cFisco ,oFont10b)
+//oPrint:say(2730,1400,"RESERVADO AO FISCO: "+ SF3->F3_MDCAT79 ,oFont10)
+
+oPrint:Box(2770,0100, 2860, 2290)
+oPrint:say(2800,0120,"INFORMAÇÕES COMPLEMENTARES",oFont10b)	
+oPrint:say(2830,0120,"A Ligue Telecomunicações Ltda contribui com 1% do valor do Serviço de Telecom ao FUST e 0,5% ao FUNTEL sem repasse ao consumidor.",oFont10)
+
+oPrint:EndPage()
+
+oPrint:Print()
+return	
+

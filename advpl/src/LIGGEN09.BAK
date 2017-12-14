@@ -1,0 +1,54 @@
+#INCLUDE "RWMAKE.CH"
+#INCLUDE "PROTHEUS.CH"
+#INCLUDE "TOPCONN.CH" 
+#INCLUDE "TBICONN.CH"
+
+
+// ROTINA PARA ATUALIZAR CD YATE NA BASE TOTVS E COLOCAR NUMCTR NA BASE POSTGREE BILLING
+User Function LIGGEN09()
+Local _area := getarea()
+if msgyesno("ROTINA PARA ATUALIZAR CD YATE NA BASE TOTVS E COLOCAR NUMCTR NA BASE POSTGREE BILLING. Deseja continuar ?") 
+		DBSELECTAREA("ADA")
+		DBGoTop()
+		while !eof()					
+						 
+				_NNUMADA := ADA->ADA_NUMCTR		
+				_NUNRCOB := ADA->ADA_UNRCOB
+		 		_NCONNSQL  := ADVCONNECTION() //PEGA CONEXAO MSSQL
+				_NCONNPTG  := TCLINK("POSTGRES/PostGreLigue","10.0.1.98",7890) //CONECTA AO POSTGRES
+							    
+				_CQUERY := " SELECT N.CD_CLIENTE, N.NUMERO "
+				_CQUERY += " FROM TELEFONIA.NUMERO N "
+				_CQUERY += " WHERE "
+				_CQUERY += " N.NUMERO = '"+_NUNRCOB+"' "
+		
+				IF SELECT("TRB0")!=0
+					TRB0->(DBCLOSEAREA())
+				ENDIF
+				TCQUERY _CQUERY NEW ALIAS "TRB0" 
+				
+				IF !EMPTY(TRB0->CD_CLIENTE)
+					_NCDCLIENTE := cValToChar(TRB0->CD_CLIENTE)
+					_CQUERY := " UPDATE INTEGRADOR.CLIENTE"
+					_CQUERY += " SET CD_TOTVS = '"+_NNUMADA+"'" 
+					_CQUERY += " WHERE CD_CLIENTE = '"+_NCDCLIENTE+"' "
+					TCSQLEXEC(_CQUERY) 
+					
+					DBSELECTAREA("ADA")
+					reclock("ADA",.F.)
+						ADA->ADA_UIDYAT := TRB0->CD_CLIENTE		
+					msunlock()	
+				ENDIF
+				
+				TRB0->(DBCLOSEAREA())
+				
+			dbselectarea("ADA")
+			dbskip()
+		enddo
+		
+endif
+restarea(_area)	
+MsgInfo("A rotina foi executada ! ")	
+Return
+
+

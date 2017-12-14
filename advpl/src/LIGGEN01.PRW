@@ -1,0 +1,321 @@
+#INCLUDE "PROTHEUS.CH"     
+#INCLUDE "RWMAKE.CH" 
+#INCLUDE "FILEIO.CH"    
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+ฑฑบPROGRAMA  ณLIGGEN01  บAUTOR  ณCASSIUS MARTINS     บ DATA ณ  30/04/14   บฑฑ
+ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
+ฑฑบDESC.     ณIMPORTA CLIENTES							      			  บฑฑ
+ฑฑบ          ณ                                                            บฑฑ
+ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
+ฑฑบUSO       ณ LIGUE                                                      บฑฑ
+ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+*/                    
+USER FUNCTION LIGGEN01()
+*********************************
+PRIVATE _CFILE 	:= " " 
+PRIVATE _AVETOR := {}
+PRIVATE _ADADOS := {}
+PRIVATE _CONT	:= 0    
+PRIVATE _NIMPOK := 0
+PRIVATE _NIMPNO := 0
+
+_CFILE := CGETFILE("*.CSV|*.CSV","ARQ.CSV",1,,.F.,GETF_LOCALHARD+GETF_LOCALFLOPPY,.F.)
+
+IF EMPTY(_CFILE) .OR. !FILE(_CFILE)
+	RETURN
+ENDIF
+
+PROCESSA({|| GEN01A() },"CARREGANDO ARQUIVO...")
+PROCESSA({|| GEN01C() },"GRAVANDO CLIENTES...")
+
+RETURN
+                      
+
+STATIC FUNCTION GEN01A() //LE ARQUIVO
+*********************************
+PRIVATE OLETXT
+PRIVATE NTAMFILE, NTAMLIN, CBUFFER, NBTLIDOS
+PRIVATE NHDL
+PRIVATE CEOL    := CHR(13)+CHR(10)
+
+NHDL := FOPEN(_CFILE,68)
+
+IF NHDL == -1
+	MSGALERT("O ARQUIVO "+_CFILE+" NAO PODE SER ABERTO! VERIFIQUE OS PARAMETROS.","ATENCAO!")
+	RETURN
+ENDIF
+
+IF FILE(_CFILE)
+	FT_FUSE(_CFILE)
+	FT_FGOTOP()
+	FT_FSKIP() //PULA CABECALHO
+	_ADADOS := {}
+	_ALINHA := {}
+	_CONT   := 0
+	WHILE !FT_FEOF() //.AND. _CONT<150
+		CLINHA := FT_FREADLN()
+		_AUXINI := 1
+		_AUXFIM := 1
+		_CTEXTO	:= " "
+		WHILE _AUXFIM<=LEN(CLINHA)
+			IF SUBSTR(CLINHA,_AUXFIM,1) == ";"
+				IF ALLTRIM(SUBSTR(CLINHA,_AUXINI,_AUXFIM-_AUXINI)) != ""
+					AADD(_ALINHA,ALLTRIM(UPPER(SUBSTR(CLINHA,_AUXINI,_AUXFIM-_AUXINI))))
+				ELSE
+					AADD(_ALINHA,SPACE(1))
+				ENDIF
+				_AUXFIM++
+				_AUXINI := _AUXFIM
+			ELSE
+				_AUXFIM++
+			ENDIF
+		ENDDO
+		_CONT++      
+		AADD(_ALINHA,SUBSTR(CLINHA,_AUXINI,_AUXFIM-_AUXINI))
+		
+		FOR _I:=1 TO LEN(_ALINHA) //RETIRA ACENTOS
+			_ALINHA[_I] := GEN01B(_ALINHA[_I])
+		NEXT _I
+		
+		AADD(_ADADOS,_ALINHA)                     
+		
+		_ALINHA := {}
+		FT_FSKIP()
+	ENDDO
+	FT_FUSE()
+ELSE            
+	MSGINFO("ARQUIVO NAO ENCONTRADO. FAVOR VERIFICAR OS PARAMETROS.")
+ENDIF
+
+RETURN
+
+
+STATIC FUNCTION GEN01B(CSTRING) //RETIRA ACENTOS
+*********************************
+LOCAL CCHAR  := ""
+LOCAL NX     := 0 
+LOCAL NY     := 0
+LOCAL CVOGAL := "AEIOUAEIOU"
+LOCAL CAGUDO := "แ้ํ๓๚"+"มษอำฺ"
+LOCAL CCIRCU := "โ๊๎๔๛"+"ยสฮิÛ"
+LOCAL CTREMA := "ไ๋๏๖ü"+"ฤหฯึÜ"
+LOCAL CCRASE := "เ่์๒๙"+"ภศฬาู" 
+LOCAL CTIO   := "ใ๕"
+LOCAL CCECID := "็ว"
+LOCAL CTRAT	 := " "
+
+FOR NX:= 1 TO LEN(CSTRING)
+
+	CCHAR:=SUBSTR(CSTRING, NX, 1)
+    
+    IF CCHAR$CAGUDO+CCIRCU+CTREMA+CCECID+CTIO+CCRASE
+    
+		NY:= AT(CCHAR,CAGUDO)		
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR(CVOGAL,NY,1))
+		ENDIF
+
+		NY:= AT(CCHAR,CCIRCU)
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR(CVOGAL,NY,1))
+		ENDIF
+
+		NY:= AT(CCHAR,CTREMA)
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR(CVOGAL,NY,1))
+		ENDIF
+		
+		NY:= AT(CCHAR,CCRASE)
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR(CVOGAL,NY,1))
+		ENDIF                     
+		
+		NY:= AT(CCHAR,CTIO)
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR("AO",NY,1))
+		ENDIF                     
+		
+		NY:= AT(CCHAR,CCECID)
+		IF NY > 0
+			CSTRING := STRTRAN(CSTRING,CCHAR,SUBSTR("CC",NY,1))
+		ENDIF
+	
+	ENDIF
+
+NEXT
+
+//TRATAMENTO DE CARACTERES ESPECIAIS
+FOR NX:=1 TO LEN(CSTRING)
+
+	CCHAR:=SUBSTR(CSTRING, NX, 1)
+	
+	IF ASC(CCHAR) < 32 .OR. ASC(CCHAR) > 123 .OR. CCHAR $ '&'
+
+		DO CASE
+			CASE ASC(CCHAR) == 38
+				CCHAR := "E"
+			CASE ASC(CCHAR) == 128
+				CCHAR := "A"
+			CASE ASC(CCHAR) == 181
+				CCHAR := "A"
+			CASE ASC(CCHAR) == 229
+				CCHAR := "O"
+			CASE ASC(CCHAR) == 144
+				CCHAR := "E"
+			CASE ASC(CCHAR) == 133
+				CCHAR := "A"
+			CASE ASC(CCHAR) == 248
+				CCHAR := ""
+			CASE ASC(CCHAR) == 152
+				CCHAR := "Y"
+			CASE ASC(CCHAR) == 208
+				CCHAR := "O"
+			CASE ASC(CCHAR) == 182
+				CCHAR := "A"
+			CASE ASC(CCHAR) == 167
+				CCHAR := ""
+			CASE ASC(CCHAR) == 166
+				CCHAR := ""
+			CASE ASC(CCHAR) == 126
+				CCHAR := ""
+			CASE ASC(CCHAR) == 221
+				CCHAR := ":"
+			CASE ASC(CCHAR) == 155
+				CCHAR := ""
+			CASE ASC(CCHAR) == 154
+				CCHAR := "U"				
+				
+		ENDCASE		
+		CSTRING := SUBSTR(CSTRING,1,NX-1)+CCHAR+SUBSTR(CSTRING,NX+1,LEN(CSTRING)-NX)
+		
+	ENDIF
+
+NEXT NX
+
+              
+
+FOR NX:=1 TO LEN(CSTRING)
+
+	CCHAR:=SUBSTR(CSTRING, NX, 1)
+
+	IF ASC(CCHAR) < 32 .OR. ASC(CCHAR) > 123 .OR. CCHAR $ '&'
+		
+		IF STRTRAN(CTRAT, "("+ALLTRIM(STR(ASC(CCHAR)))+"-"+CCHAR+")  ") == CTRAT
+			CTRAT += "("+ALLTRIM(STR(ASC(CCHAR)))+"-"+CCHAR+")  "
+		ENDIF
+		//CSTRING:=STRTRAN(CSTRING,CCHAR,"?")
+	ENDIF
+
+NEXT NX
+
+CSTRING := _NOTAGS(CSTRING)
+
+RETURN CSTRING 
+
+
+
+STATIC FUNCTION GEN01C() //IMPORTA DADOS
+***********************************
+LOCAL PA1_COD	    := 0
+LOCAL PA1_LOJA      := 0
+LOCAL PA1_PESSOA    := 2
+LOCAL PA1_CGC       := 3
+LOCAL PA1_NOME      := 4
+LOCAL PA1_NREDUZ    := 5
+LOCAL PA1_END       := 10
+LOCAL PA1_TIPO      := 7
+LOCAL PA1_EST       := 13
+LOCAL PA1_COD_MUN   := 8
+LOCAL PA1_BAIRRO	:= 11
+LOCAL PA1_CEP       := 12
+LOCAL PA1_TEL       := 15
+LOCAL PA1_INSCR     := 6
+LOCAL PA1_EMAIL		:= 18
+LOCAL PA1_COMPLEM   := 0
+
+LOCAL CDIRLOG		:= GETSRVPROFSTRING("STARTPATH","")
+LOCAL CARQLOG		:= "IMPSA1LOG.LOG"
+LOCAL CARQERRO		:= "LOGIMPSA1.LOG"  
+LOCAL CERROAUTO		:= ""
+
+LOCAL LERRO			:= .F.
+
+DBSELECTAREA("SA1")
+ASORT(_ADADOS,,,{|X,Y| X[PA1_NOME]<Y[PA1_NOME]})
+
+//BEGIN TRANSACTION
+
+PROCREGUA(LEN(_ADADOS))
+FOR I:=1 TO LEN(_ADADOS)   
+	INCPROC("AGUARDE...")   
+	
+	//TRATA DADOS
+	_CDDD := LEFT(_ADADOS[I,PA1_TEL],2)
+	_CTEL := ALLTRIM(SUBSTR(_ADADOS[I,PA1_TEL],3,8))
+	                                  
+	_CCGC := STRTRAN(_ADADOS[I,PA1_CGC],".","")
+	_CCGC := STRTRAN(_CCGC,"/","")
+	_CCGC := STRTRAN(_CCGC,"-","")  
+	
+	_CFANT := IIF(EMPTY(_ADADOS[I,PA1_NREDUZ]),_ADADOS[I,PA1_NOME],_ADADOS[I,PA1_NREDUZ])
+	
+	DBSELECTAREA("SA1")
+	DBSETORDER(3)
+	IF !DBSEEK(XFILIAL("SA1")+_CCGC) .OR. EMPTY(_CCGC)
+	
+		_AVETOR := {}       
+		AADD(_AVETOR,{"A1_PESSOA",ALLTRIM(_ADADOS[I,PA1_PESSOA]),NIL})
+		AADD(_AVETOR,{"A1_CGC",ALLTRIM(_CCGC),NIL})
+		AADD(_AVETOR,{"A1_NOME",ALLTRIM(_ADADOS[I,PA1_NOME]),NIL})
+		AADD(_AVETOR,{"A1_NREDUZ",ALLTRIM(_CFANT),NIL})
+		AADD(_AVETOR,{"A1_END",ALLTRIM(_ADADOS[I,PA1_END]),NIL})
+		AADD(_AVETOR,{"A1_TIPO",ALLTRIM(_ADADOS[I,PA1_TIPO]),NIL})                          
+		AADD(_AVETOR,{"A1_EST",ALLTRIM(_ADADOS[I,PA1_EST]),NIL})
+		AADD(_AVETOR,{"A1_COD_MUN",ALLTRIM(_ADADOS[I,PA1_COD_MUN]),NIL})
+		AADD(_AVETOR,{"A1_BAIRRO",ALLTRIM(_ADADOS[I,PA1_BAIRRO]),NIL})
+		AADD(_AVETOR,{"A1_CEP",ALLTRIM(_ADADOS[I,PA1_CEP]),NIL})
+		AADD(_AVETOR,{"A1_DDD",ALLTRIM(_CDDD),NIL})
+		AADD(_AVETOR,{"A1_TEL",ALLTRIM(_CTEL),NIL})
+		AADD(_AVETOR,{"A1_INSCR",ALLTRIM(_ADADOS[I,PA1_INSCR]),NIL})
+		AADD(_AVETOR,{"A1_EMAIL",ALLTRIM(_ADADOS[I,PA1_EMAIL]),NIL})
+		//AADD(_AVETOR,{"A1_COMPLEM",ALLTRIM(_ADADOS[I,PA1_COMPLEM]),NIL})
+		
+		LMSERROAUTO := .F.
+		DBSELECTAREA("SA1")
+		DBSETORDER(1)
+		MSEXECAUTO({|X,Y| MATA030(X,Y)},_AVETOR,3) //INCLUSAO
+		IF LMSERROAUTO
+			MOSTRAERRO(CDIRLOG, CARQLOG) 
+			CERROAUTO += MEMOREAD(CDIRLOG+CARQLOG)  
+			CERROAUTO += CHR(10)+CHR(13)
+			LERRO 	  := .T.                             
+			_NIMPNO++
+		ELSE         
+			_NIMPOK++
+		ENDIF  
+				
+	ENDIF
+NEXT                
+                  
+IF LERRO       
+	MEMOWRIT(CARQERRO,CERROAUTO)	
+	IF (NHANDLE := FOPEN(CARQERRO,FO_READWRITE)) >= 0
+		NFINAL  := FSEEK(NHANDLE,0,2)
+		FSEEK(NHANDLE,NFINAL)
+		FWRITE(NHANDLE,CERROAUTO)
+		FCLOSE(NHANDLE)
+	ENDIF                    
+	
+	//DISARMTRANSACTION()
+ENDIF                
+
+MSGALERT("QT CLIENTES IMPORTADOS : "+ALLTRIM(STR(_NIMPOK))+" - QT CLIENTES NAO IMPORTADOS : "+ALLTRIM(STR(_NIMPNO)))
+
+//END TRANSACTION
+
+RETURN(.T.)

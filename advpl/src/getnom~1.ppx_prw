@@ -1,0 +1,43 @@
+#line 1 "C:\TOTVS11\INCLUDE\protheus.ch"
+#line 1 "C:\TOTVS11\INCLUDE\Dialog.ch"
+#line 28 "protheus.ch"
+#line 1 "C:\TOTVS11\INCLUDE\Font.ch"
+#line 29 "protheus.ch"
+#line 1 "C:\TOTVS11\INCLUDE\PTMenu.ch"
+#line 31 "protheus.ch"
+#line 1 "C:\TOTVS11\INCLUDE\Print.ch"
+#line 33 "protheus.ch"
+#line 1 "C:\TOTVS11\INCLUDE\Colors.ch"
+#line 35 "protheus.ch"
+#line 1 "C:\TOTVS11\INCLUDE\Folder.ch"
+#line 37 "protheus.ch"
+#line 1 "C:\TOTVS11\INCLUDE\msobject.ch"
+#line 38 "protheus.ch"
+#line 1 "C:\TOTVS11\INCLUDE\VKey.ch"
+#line 42 "protheus.ch"
+#line 1 "C:\TOTVS11\INCLUDE\WinApi.ch"
+#line 44 "protheus.ch"
+#line 1 "C:\TOTVS11\INCLUDE\FWCommand.ch"
+#line 47 "protheus.ch"
+#line 1 "C:\TOTVS11\INCLUDE\FWCSS.CH"
+#line 50 "protheus.ch"
+#line 2 "c:\totvs11\MYPROJ~1\GETNOM~1.PRW"
+#line 1 "C:\TOTVS11\INCLUDE\parmtype.ch"
+#line 4 "c:\totvs11\MYPROJ~1\GETNOM~1.PRW"
+Function U_getNomeSolic(numSC)
+	Local _area := getarea()
+	Local _aSC1 := SC1->(getarea())
+	Local _nomeUser := ""
+
+	dbSelectArea("SC1")
+	dbsetorder(1)
+	dbGoTop()
+
+	if dbseek(xFilial("SC1")+ numSC)
+		_codUser := POSICIONE("SC1",1,xFilial("SC1")+numSC,"C1_USER")
+		_nomeUser := UsrRetName(_codUser)
+	endif
+
+	restarea(_aSC1)
+	restarea(_area)
+return _nomeUser

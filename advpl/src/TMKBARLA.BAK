@@ -1,0 +1,25 @@
+#Include "Protheus.ch"
+#INCLUDE "FWMVCDEF.CH"
+
+User Function TMKBARLA(aBotao, aTitulo)
+	aAdd(aBotao,{"POSCLI"  , {|| TMKBARLA1()()} ,"Cliente"})	
+Return( aBotao )
+
+
+Static Function TMKBARLA1()
+Local _cCodCli := M->UA_CLIENTE
+Local _cLoja := M->UA_LOJA
+Local aArea := GetArea()
+Local _aSA1 := SA1->(getarea())
+
+dbselectarea("SA1")
+dbsetorder(1)
+if dbseek(xFilial()+_cCodCli+_cLoja)
+	FWExecView('Inclusao por FWExecView','AGBSA1_MVC', MODEL_OPERATION_UPDATE, , { || .T. }, , , )
+else
+	ALERT('Não foi possivel localizar o Cliente do Tele Vendas.')
+endif
+
+restarea(_aSA1)
+RestArea( aArea )
+Return
