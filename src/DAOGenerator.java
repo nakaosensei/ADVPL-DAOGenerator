@@ -38,6 +38,7 @@ public class DAOGenerator {
         inSplitValidate = trimAllFromSource(inSplitValidate);
         inSplitVariables = trimAllFromSource(inSplitVariables);
         inSplitNonNumericNonDate = trimAllFromSource(inSplitNonNumericNonDate);
+
         inSplitNonNumericNonDate = removeFrom(inSplitNonNumericNonDate,inSplitNum);
         inSplitNonNumericNonDate = removeFrom(inSplitNonNumericNonDate,inSplitDate);
         inSplitNonNumeric = removeFrom(inSplitNonNumeric,inSplitNum);
